@@ -27,18 +27,18 @@
 
 There are three kinds of route:
 
-| Kind      | How it's protected                  | Routes                                    |
-| --------- | ----------------------------------- | ----------------------------------------- |
-| Public    | Nothing (no token exists yet)       | Sign up, log in                           |
-| Logged in | Cookie **or** Bearer token (below)  | Log out, me, everything under `/api/repos` |
-| Signature | GitHub's webhook signature          | `/api/webhooks/github/:repoId`            |
+| Kind      | How it's protected                 | Routes                                     |
+| --------- | ---------------------------------- | ------------------------------------------ |
+| Public    | Nothing (no token exists yet)      | Sign up, log in                            |
+| Logged in | Cookie **or** Bearer token (below) | Log out, me, everything under `/api/repos` |
+| Signature | GitHub's webhook signature         | `/api/webhooks/github/:repoId`             |
 
 ### Two clients, two ways to send the token
 
-| Client    | How it sends the token                           | Why                                                                 |
-| --------- | ------------------------------------------------ | ------------------------------------------------------------------- |
-| Dashboard | **httpOnly cookie**, set by the server at login  | Page scripts can't read it, so injected scripts (XSS) can't steal it |
-| Extension | `Authorization: Bearer <token>` header           | Saved in `chrome.storage` after the extension logs in               |
+| Client    | How it sends the token                          | Why                                                                  |
+| --------- | ----------------------------------------------- | -------------------------------------------------------------------- |
+| Dashboard | **httpOnly cookie**, set by the server at login | Page scripts can't read it, so injected scripts (XSS) can't steal it |
+| Extension | `Authorization: Bearer <token>` header          | Saved in `chrome.storage` after the extension logs in                |
 
 **The auth middleware checks the cookie first, then the header.** One middleware, two clients.
 
@@ -55,15 +55,15 @@ There are three kinds of route:
 
 ## Status codes
 
-| Status | Meaning                                                             |
-| ------ | ------------------------------------------------------------------- |
-| `200`  | OK                                                                  |
-| `201`  | Created: something new was saved                                    |
-| `400`  | Bad request: input missing or invalid                               |
-| `401`  | Authentication failed: not logged in, or a bad token                |
+| Status | Meaning                                                                          |
+| ------ | -------------------------------------------------------------------------------- |
+| `200`  | OK                                                                               |
+| `201`  | Created: something new was saved                                                 |
+| `400`  | Bad request: input missing or invalid                                            |
+| `401`  | Authentication failed: not logged in, or a bad token                             |
 | `404`  | Not found, **or not yours** (we don't use `403`, to avoid revealing what exists) |
-| `409`  | Conflict: clashes with something that already exists                |
-| `500`  | Unexpected server error (global error handler)                      |
+| `409`  | Conflict: clashes with something that already exists                             |
+| `500`  | Unexpected server error (global error handler)                                   |
 
 ## Error format
 
@@ -252,12 +252,12 @@ Duplicates: same X-GitHub-Delivery seen before → 200, ignored (not an error)
 
 ## Decisions log
 
-| Decision                         | Choice                                                     | Why                                                              |
-| -------------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- |
-| Dashboard token storage          | httpOnly cookie                                            | Safe from XSS; common real-world pattern                         |
-| Extension token storage          | `chrome.storage` + Bearer header                           | Extensions can't easily share the dashboard's cookie             |
-| Dashboard hosting                | Served by Express                                          | Same domain, so the cookie stays first-party                     |
-| Same repo, different users       | Allowed; each gets its own webhook URL `/github/:repoId`   | The team can all use the project repo; no guessing which row     |
-| Someone else's repo              | `404`                                                      | Hides which repo IDs exist                                       |
-| Repo with no pet                 | `404` "No pet yet"                                         | The pet doesn't exist yet                                        |
-| Error format                     | `{ "error": "message" }`                                   | Every client handles errors the same way                         |
+| Decision                   | Choice                                                   | Why                                                          |
+| -------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
+| Dashboard token storage    | httpOnly cookie                                          | Safe from XSS; common real-world pattern                     |
+| Extension token storage    | `chrome.storage` + Bearer header                         | Extensions can't easily share the dashboard's cookie         |
+| Dashboard hosting          | Served by Express                                        | Same domain, so the cookie stays first-party                 |
+| Same repo, different users | Allowed; each gets its own webhook URL `/github/:repoId` | The team can all use the project repo; no guessing which row |
+| Someone else's repo        | `404`                                                    | Hides which repo IDs exist                                   |
+| Repo with no pet           | `404` "No pet yet"                                       | The pet doesn't exist yet                                    |
+| Error format               | `{ "error": "message" }`                                 | Every client handles errors the same way                     |
