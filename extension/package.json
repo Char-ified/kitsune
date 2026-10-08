@@ -1,0 +1,18 @@
+{
+  "name": "extension",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rm -rf dist && cp -r public dist && esbuild src/content.ts src/popup.ts --bundle --outdir=dist",
+    "watch": "rm -rf dist && cp -r public dist && esbuild src/content.ts src/popup.ts --bundle --outdir=dist --watch",
+    "typecheck": "tsc"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.3.4",
+    "esbuild": "^0.28.2"
+  },
+  "dependencies": {
+    "@kitsune/shared": "^0.0.0"
+  }
+}

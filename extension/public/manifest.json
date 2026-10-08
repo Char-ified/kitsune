@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Kitsune Repo Pet",
+  "version": "0.0.1",
+  "description": "A companion that reacts to what happens in your GitHub repo.",
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "permissions": ["storage"]
+}
