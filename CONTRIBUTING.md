@@ -18,7 +18,7 @@ How we work together on Kitsune Repo Pet.
 2. **Make a branch** named after the Linear issue:
 
    ```bash
-   git checkout -b cha-10-signup-routes
+   git checkout -b feat/signup-routes
    ```
 
 3. **Commit as you go** (see commit style below).
@@ -34,7 +34,7 @@ How we work together on Kitsune Repo Pet.
 5. **Push your branch:**
 
    ```bash
-   git push -u origin cha-10-signup-routes
+   git push -u origin feat/signup-routes
    ```
 
 6. **Open a pull request** into `main` on GitHub and request a reviewer.
@@ -43,9 +43,19 @@ How we work together on Kitsune Repo Pet.
 
 ## Branch names
 
-`cha-<issue number>-<short-description>`, all lowercase with dashes.
+| Type       | Use for                                          |
+| ---------- | ------------------------------------------------ |
+| `feat`     | A new feature                                    |
+| `fix`      | A bug fix                                        |
+| `docs`     | Documentation only                               |
+| `style`    | Formatting only, no code changes                 |
+| `refactor` | Code changes that don't add features or fix bugs |
+| `test`     | Adding or updating tests                         |
+| `chore`    | Setup, config, dependencies                      |
 
-Examples: `cha-10-signup-routes`, `cha-22-extension-pet-display`
+`<type>/<short-description>`, all lowercase with dash or /.
+
+Examples: `feat/signup-routes`, `feat/extension-pet-display, chore/dashboard-package`
 
 ## Commit messages
 
