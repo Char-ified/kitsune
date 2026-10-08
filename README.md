@@ -28,7 +28,7 @@ cp server/.env.example server/.env
 npm run dev:server
 ```
 
-Check it at http://localhost:3000/api/health. It should return `{"status":"ok"}`.
+Starts the Express server on http://localhost:3000. Routes are added in later issues; see [docs/API.md](docs/API.md).
 
 ### Run the dashboard
 
@@ -46,7 +46,12 @@ Open http://localhost:5173. Requests to `/api` are forwarded to the server.
 npm run build:extension
 ```
 
-In Chrome, go to `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and choose `extension/dist`. Visit any github.com page to see the placeholder pet.
+In Chrome, go to `chrome://extensions`, turn on **Developer mode**, click **Load unpacked**, and choose `extension/dist`. After rebuilding, click the reload icon on the extension's card.
+
+## Docs
+
+- [API contract](docs/API.md): every route, its input and output, and the decisions behind them
+- [Contributing](CONTRIBUTING.md): branches, commits, and pull requests
 
 ## Useful scripts (run from the root)
 
