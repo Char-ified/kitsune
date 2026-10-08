@@ -28,7 +28,7 @@ cp server/.env.example server/.env
 npm run dev:server
 ```
 
-Starts the Express server on http://localhost:3000. Routes are added in later issues; see [docs/API.md](docs/API.md).
+Check it at http://localhost:3000/api/health. It should return `{"status":"ok"}`. All routes are listed in [docs/API.md](docs/API.md).
 
 ### Run the dashboard
 

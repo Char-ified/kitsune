@@ -27,11 +27,11 @@
 
 There are three kinds of route:
 
-| Kind      | How it's protected                 | Routes                                     |
-| --------- | ---------------------------------- | ------------------------------------------ |
-| Public    | Nothing (no token exists yet)      | Sign up, log in                            |
-| Logged in | Cookie **or** Bearer token (below) | Log out, me, everything under `/api/repos` |
-| Signature | GitHub's webhook signature         | `/api/webhooks/github/:repoId`             |
+| Kind      | How it's protected                 | Routes                                 |
+| --------- | ---------------------------------- | -------------------------------------- |
+| Public    | Nothing (no token needed)          | Health check, sign up, log in, log out |
+| Logged in | Cookie **or** Bearer token (below) | Me, everything under `/api/repos`      |
+| Signature | GitHub's webhook signature         | `/api/webhooks/github/:repoId`         |
 
 ### Two clients, two ways to send the token
 
@@ -77,9 +77,10 @@ Every error response uses the same shape:
 
 | #   | Action         | Method | URL                            | Auth      |
 | --- | -------------- | ------ | ------------------------------ | --------- |
+| 0   | Health check   | `GET`  | `/api/health`                  | Public    |
 | 1   | Sign up        | `POST` | `/api/auth/signup`             | Public    |
 | 2   | Log in         | `POST` | `/api/auth/login`              | Public    |
-| 3   | Log out        | `POST` | `/api/auth/logout`             | Logged in |
+| 3   | Log out        | `POST` | `/api/auth/logout`             | Public    |
 | 4   | Who am I?      | `GET`  | `/api/auth/me`                 | Logged in |
 | 5   | List my repos  | `GET`  | `/api/repos`                   | Logged in |
 | 6   | Connect a repo | `POST` | `/api/repos`                   | Logged in |
@@ -89,6 +90,17 @@ Every error response uses the same shape:
 | 10  | GitHub event   | `POST` | `/api/webhooks/github/:repoId` | Signature |
 
 ## Route details
+
+### 0. Health check: `GET /api/health`
+
+- **Auth:** Public
+- **Notes:** Confirms the server is running. Hosting platforms can use it to check the server is alive.
+
+```
+Input:   none
+Output:  200 OK
+         { "status": "ok" }
+```
 
 ### 1. Sign up: `POST /api/auth/signup`
 
@@ -122,8 +134,8 @@ Errors:  400  missing email or password
 
 ### 3. Log out: `POST /api/auth/logout`
 
-- **Auth:** Logged in
-- **Notes:** Needed because of the httpOnly cookie: page scripts **can't** delete it, so the server has to clear it. The extension logs out by deleting its token from `chrome.storage`, without calling this route.
+- **Auth:** Public
+- **Notes:** Needed because of the httpOnly cookie: page scripts **can't** delete it, so the server has to clear it. **Public on purpose:** logging out when you're already logged out does no harm, so it always returns `200` and can never get stuck. The extension logs out by deleting its token from `chrome.storage`, without calling this route.
 
 ```
 Input:   none
@@ -162,13 +174,13 @@ Errors:  401  not logged in
 ### 6. Connect a repo: `POST /api/repos`
 
 - **Auth:** Logged in
-- **Notes:** Same URL as #5. The method tells them apart. **Different users can connect the same GitHub repo** (e.g. the whole team on one project repo). Each connection gets its own row, its own secret, and its own webhook URL. The **same user** connecting the same repo twice is a `409`. The secret is **only shown here, once**, and never sent again by any other route.
+- **Notes:** Same URL as #5. The method tells them apart. **Different users can connect the same GitHub repo** (e.g. the whole team on one project repo). Each connection gets its own row, its own secret, and its own webhook URL. The **same user** connecting the same repo twice is a `409`. The secret is **only shown here, once**, and never sent again by any other route. The server builds `webhookUrl` from the `PUBLIC_URL` environment variable (the server's public address).
 
 ```
 Input:   { "fullName": "owner/repo-name" }
 Output:  201 Created
          { "id": number, "fullName": "string",
-           "webhookUrl": "https://<our-domain>/api/webhooks/github/<id>",
+           "webhookUrl": "<PUBLIC_URL>/api/webhooks/github/<id>",
            "webhookSecret": "string", "createdAt": "string" }
 Errors:  400  missing fullName, or not in "owner/name" format
          401  not logged in
@@ -261,3 +273,6 @@ Duplicates: same X-GitHub-Delivery seen before → 200, ignored (not an error)
 | Someone else's repo        | `404`                                                    | Hides which repo IDs exist                                   |
 | Repo with no pet           | `404` "No pet yet"                                       | The pet doesn't exist yet                                    |
 | Error format               | `{ "error": "message" }`                                 | Every client handles errors the same way                     |
+| Log out                    | Public, always `200`                                     | Logging out twice is harmless, so it can never get stuck     |
+| Webhook secrets            | One per connected repo, stored in the database           | No global webhook secret env var                             |
+| Webhook URL                | Built from `PUBLIC_URL` env var                          | The server needs its own public address to build the URL     |
