@@ -1,6 +1,7 @@
 import { Button } from './components/Button';
 import { TextInput } from './components/TextInput';
 import { Panel } from './components/Panel';
+import { MoodBadge } from './components/MoodBadge';
 
 export const App = () => {
   return (
@@ -16,6 +17,9 @@ export const App = () => {
         <TextInput label="Repository" placeholder="owner/repository" />
         <TextInput label="Email" error="Enter a valid email address." />
       </Panel>
+      <MoodBadge mood="happy" />
+      <MoodBadge mood="normal" />
+      <MoodBadge mood="sick" />
     </div>
   );
 };
