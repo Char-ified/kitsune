@@ -1,29 +1,26 @@
-import { Button } from './components/Button';
-import { TextInput } from './components/TextInput';
-import { Panel } from './components/Panel';
-import { MoodBadge } from './components/MoodBadge';
-import { MoodMeter } from './components/MoodMeter';
+import { BrowserRouter, Routes, Route } from 'react-router';
+import { LoginPage } from './pages/LoginPage';
+import { SignupPage } from './pages/SignupPage';
+import { ConnectRepoPage } from './pages/ConnectRepoPage';
+import { WebhookSetupPage } from './pages/WebhookSetupPage';
+import { PickCharacterPage } from './pages/PickCharacterPage';
+import { PetViewPage } from './pages/PetViewPage';
+import { StyleGuidePage } from './pages/StyleGuidePage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 export const App = () => {
   return (
-    <div>
-      <h1>Kitsune Repo Pet</h1>
-      <p>Its only the begining!</p>
-      <Button variant="primary">Connect repository</Button>
-      <Button variant="secondary">View repository</Button>
-      <Button variant="primary" disabled>
-        Disable
-      </Button>
-      <Panel title="Log in">
-        <TextInput label="Repository" placeholder="owner/repository" />
-        <TextInput label="Email" error="Enter a valid email address." />
-      </Panel>
-      <MoodBadge mood="happy" />
-      <MoodBadge mood="normal" />
-      <MoodBadge mood="sick" />
-      <MoodMeter mood="happy" />
-      <MoodMeter mood="normal" />
-      <MoodMeter mood="sick" />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
+        <Route path="/connect" element={<ConnectRepoPage />} />
+        <Route path="/repos/:repoId/webhook" element={<WebhookSetupPage />} />
+        <Route path="/repos/:repoId/pick-character" element={<PickCharacterPage />} />
+        <Route path="/repos/:repoId" element={<PetViewPage />} />
+        <Route path="/styleguide" element={<StyleGuidePage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </BrowserRouter>
   );
 };
