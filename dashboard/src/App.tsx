@@ -1,1 +1,8 @@
-// Root React component for the dashboard. (CHA-12, CHA-18, CHA-23)
+export const App = () => {
+  return (
+    <div>
+      <h1>Kitsune Repo Pet</h1>
+      <p>Its only the begining!</p>
+    </div>
+  );
+};
