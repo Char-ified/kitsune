@@ -2,6 +2,7 @@ import { Button } from './components/Button';
 import { TextInput } from './components/TextInput';
 import { Panel } from './components/Panel';
 import { MoodBadge } from './components/MoodBadge';
+import { MoodMeter } from './components/MoodMeter';
 
 export const App = () => {
   return (
@@ -20,6 +21,9 @@ export const App = () => {
       <MoodBadge mood="happy" />
       <MoodBadge mood="normal" />
       <MoodBadge mood="sick" />
+      <MoodMeter mood="happy" />
+      <MoodMeter mood="normal" />
+      <MoodMeter mood="sick" />
     </div>
   );
 };
