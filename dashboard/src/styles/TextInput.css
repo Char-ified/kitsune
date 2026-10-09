@@ -1,0 +1,43 @@
+/* dashboard/src/styles/TextInput.css */
+
+/* The whole group: label, input, error, stacked with even gaps */
+.field {
+  display: flex; /* turn on flexbox for the children */
+  flex-direction: column; /* stack them top to bottom (default is side by side) */
+  gap: var(--space-2); /* 8px between each child */
+  margin-bottom: var(--space-4); /* 16px space below the whole group */
+}
+
+.field label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.input {
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-ui);
+  font-size: 16px;
+}
+
+.input:focus {
+  outline: none; /* removes browser default blue glow */
+  border-color: var(--color-gold);
+}
+
+.input-error {
+  border-color: var(--color-vermilion);
+}
+
+.field-error {
+  color: var(--color-vermilion);
+  font-size: 14px;
+  margin: 0;
+}
+
+.input-error:focus {
+  border-color: var(--color-vermilion);
+}

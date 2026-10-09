@@ -1,4 +1,5 @@
 import { Button } from './components/Button';
+import { TextInput } from './components/TextInput';
 
 export const App = () => {
   return (
@@ -10,6 +11,8 @@ export const App = () => {
       <Button variant="primary" disabled>
         Disable
       </Button>
+      <TextInput label="Repository" placeholder="owner/repository" />
+      <TextInput label="Email" error="Enter a valid email address." />
     </div>
   );
 };
