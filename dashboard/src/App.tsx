@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { RequireAuth } from './components/RequireAuth';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
 import { ConnectRepoPage } from './pages/ConnectRepoPage';
@@ -14,13 +15,20 @@ export const App = () => {
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
+          {/* Public */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          <Route path="/connect" element={<ConnectRepoPage />} />
-          <Route path="/repos/:repoId/webhook" element={<WebhookSetupPage />} />
-          <Route path="/repos/:repoId/pick-character" element={<PickCharacterPage />} />
-          <Route path="/repos/:repoId" element={<PetViewPage />} />
           <Route path="/styleguide" element={<StyleGuidePage />} />
+
+          {/* Protected: must be logged in */}
+          <Route element={<RequireAuth />}>
+            <Route path="/" element={<Navigate to="/connect" replace />} />
+            <Route path="/connect" element={<ConnectRepoPage />} />
+            <Route path="/repos/:repoId/webhook" element={<WebhookSetupPage />} />
+            <Route path="/repos/:repoId/pick-character" element={<PickCharacterPage />} />
+            <Route path="/repos/:repoId" element={<PetViewPage />} />
+          </Route>
+
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
