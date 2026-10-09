@@ -18,7 +18,7 @@ export const MoodMeter = ({ mood }: MoodMeterProps) => {
 
   return (
     <div className={`mood-meter mood-meter-${mood}`}>
-      {Array.from({ length: TOTAL_SEGMENTS }, (_dirname, i) => (
+      {Array.from({ length: TOTAL_SEGMENTS }, (_, i) => (
         <span key={i} className={i < filled ? 'segment segment-filled' : 'segment'} />
       ))}
     </div>
