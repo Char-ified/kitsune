@@ -33,11 +33,9 @@ authRouter.post('/signup', async (req: Request, res: Response) => {
     typeof password !== 'string' ||
     password.length < MIN_PASSWORD_LENGTH
   ) {
-    res
-      .status(400)
-      .json({
-        error: `Enter a valid email and a password of at least ${MIN_PASSWORD_LENGTH} characters`,
-      });
+    res.status(400).json({
+      error: `Enter a valid email and a password of at least ${MIN_PASSWORD_LENGTH} characters`,
+    });
     return;
   }
 
