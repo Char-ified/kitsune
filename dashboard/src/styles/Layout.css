@@ -1,0 +1,16 @@
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.header-title {
+  font-family: var(--font-pixel);
+  font-size: 18px;
+}
+
+main {
+  padding: var(--space-6);
+}
