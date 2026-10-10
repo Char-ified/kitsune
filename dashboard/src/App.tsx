@@ -1,7 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route } from 'react-router';
 import { RequireAuth } from './components/RequireAuth';
 import { LoginPage } from './pages/LoginPage';
 import { SignupPage } from './pages/SignupPage';
+import { DashboardPage } from './pages/DashboardPage';
 import { ConnectRepoPage } from './pages/ConnectRepoPage';
 import { WebhookSetupPage } from './pages/WebhookSetupPage';
 import { PickCharacterPage } from './pages/PickCharacterPage';
@@ -24,7 +25,7 @@ export const App = () => {
 
             {/* Protected: must be logged in */}
             <Route element={<RequireAuth />}>
-              <Route path="/" element={<Navigate to="/connect" replace />} />
+              <Route path="/" element={<DashboardPage />} />
               <Route path="/connect" element={<ConnectRepoPage />} />
               <Route path="/repos/:repoId/webhook" element={<WebhookSetupPage />} />
               <Route path="/repos/:repoId/pick-character" element={<PickCharacterPage />} />
