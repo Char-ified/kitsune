@@ -2,6 +2,9 @@
 import type { NextFunction, Request, Response } from 'express';
 import cookieParser from 'cookie-parser';
 import express from 'express';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import authRouter from './auth/routes.js';
 
 const app = express();
@@ -23,6 +26,24 @@ app.use('/api/auth', authRouter);
 app.use('/api', (_req: Request, res: Response) => {
   res.status(404).json({ error: 'Not found' });
 });
+
+// In production, Express also serves the built dashboard, so the dashboard and
+// the API share one domain (which keeps the login cookie first-party).
+// In local dev this folder doesn't exist, and Vite serves the dashboard instead.
+const dashboardDist = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../dashboard/dist',
+);
+
+if (fs.existsSync(dashboardDist)) {
+  app.use(express.static(dashboardDist));
+
+  // Any other URL (like /login or /repos/11) gets index.html, and React Router
+  // shows the right page. Without this, refreshing a page would be a 404.
+  app.get(/^(?!\/api).*/, (_req: Request, res: Response) => {
+    res.sendFile(path.join(dashboardDist, 'index.html'));
+  });
+}
 
 // Global error handler. Express knows it's an error handler because it has 4 arguments,
 // so `_next` has to stay even though it's unused. It must come after every route.
