@@ -3,8 +3,53 @@
   <head>
     <meta charset="UTF-8" />
     <title>Kitsune Repo Pet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&family=Pixelify+Sans:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
+    <header>
+      <img class="logo" src="kitsune-happy.png" alt="" />
+      <span class="brand">Kitsune Repo Pet</span>
+    </header>
+
+    <p id="loading" class="muted">Waking your guardian...</p>
+
+    <section id="logged-out" hidden>
+      <h1>Log in</h1>
+      <p class="muted">Your guardian is waiting for you.</p>
+
+      <form id="login-form" novalidate>
+        <label for="email">Email address</label>
+        <input id="email" type="email" autocomplete="email" required />
+
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required />
+
+        <p id="error" class="error" role="alert" hidden></p>
+
+        <button id="login-button" class="btn btn-primary" type="submit">Log in →</button>
+      </form>
+
+      <p class="muted switch">New here? <a id="signup-link" target="_blank">Sign up</a></p>
+    </section>
+
+    <section id="logged-in" hidden>
+      <div class="stage">
+        <img class="fox" src="kitsune-happy.png" alt="" />
+      </div>
+      <h1>You're logged in</h1>
+      <p id="user-email" class="mono"></p>
+      <p class="muted">Open a connected repo on GitHub to see its guardian.</p>
+
+      <button id="open-dashboard" class="btn btn-primary" type="button">Open dashboard →</button>
+      <button id="logout-button" class="btn btn-secondary" type="button">Log out</button>
+    </section>
+
     <script src="popup.js"></script>
   </body>
 </html>
