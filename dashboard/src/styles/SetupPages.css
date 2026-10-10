@@ -1,0 +1,198 @@
+/* Shared by the setup pages: connect a repo and webhook setup. */
+
+.setup-title {
+  font-family: var(--font-pixel);
+  font-size: 32px;
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+
+.setup-subtitle {
+  color: var(--color-muted);
+  margin: 0 0 var(--space-6);
+}
+
+.setup-muted {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 var(--space-4);
+}
+
+.setup-hint {
+  color: var(--color-muted);
+  font-size: 12px;
+  margin: 0 0 var(--space-5);
+}
+
+/* Wider panel for the task, narrower one for the explanation.
+   stretch makes them the same height. */
+.setup-columns {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: var(--space-5);
+  align-items: stretch;
+}
+
+/* Roomier panels with a bigger title, only on the setup pages. */
+.setup-columns .panel {
+  padding: var(--space-6);
+}
+
+.setup-columns .panel-title {
+  font-size: 24px;
+  margin-bottom: var(--space-3);
+}
+
+/* A small, quiet label and a monospace input, like the Figma. */
+.setup-columns .field {
+  margin: var(--space-5) 0 var(--space-3);
+}
+
+.setup-columns .field label {
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.setup-columns .input {
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+
+/* Full-width button with a quiet Cancel link under it. */
+.setup-form-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.setup-form-actions .btn {
+  width: 100%;
+}
+
+.setup-cancel {
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.setup-cancel:hover {
+  color: var(--color-text);
+}
+
+.setup-checklist {
+  list-style: none;
+  margin: var(--space-5) 0 0;
+  padding: var(--space-5) 0 0;
+  border-top: 2px solid var(--color-border);
+  font-size: 14px;
+}
+
+.setup-checklist li {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.setup-checklist li::before {
+  content: '✓';
+  color: var(--color-jade);
+}
+
+.setup-repo-name {
+  font-family: var(--font-mono);
+  margin: var(--space-1) 0 var(--space-4);
+}
+
+.setup-warning {
+  border: 2px solid var(--color-gold);
+  border-radius: 4px;
+  color: var(--color-gold);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+}
+
+.copy-field {
+  margin-bottom: var(--space-4);
+}
+
+.copy-field-label {
+  color: var(--color-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.copy-field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* min-width: 0 lets a long URL shrink and scroll instead of pushing the button out. */
+.copy-field-value {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: var(--space-3) var(--space-4);
+}
+
+.github-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 14px;
+}
+
+.github-steps li {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.github-steps .setup-step-number {
+  flex-shrink: 0;
+  color: var(--color-gold);
+}
+
+.github-steps .setup-muted {
+  margin: var(--space-1) 0 0;
+}
+
+.setup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-5);
+}
+
+.setup-footer .setup-muted {
+  margin: 0;
+}
+
+.setup-footer-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+@media (max-width: 800px) {
+  .setup-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .setup-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

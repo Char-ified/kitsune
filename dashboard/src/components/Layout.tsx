@@ -21,9 +21,12 @@ export const Layout = () => {
           <span className="header-title">Kitsune Repo Pet</span>
         </Link>
         {status === 'loggedIn' && (
-          <Button variant="secondary" onClick={handleLogout}>
-            Log out
-          </Button>
+          <nav className="header-nav">
+            <Link to="/">My repos</Link>
+            <Button variant="secondary" onClick={handleLogout}>
+              Log out
+            </Button>
+          </nav>
         )}
       </header>
       <main>
