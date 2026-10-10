@@ -8,12 +8,23 @@ type TextInputProps = InputHTMLAttributes<HTMLInputElement> & {
 
 export const TextInput = ({ label, error, ...rest }: TextInputProps) => {
   const id = useId();
+  const errorId = `${id}-error`;
 
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      <input id={id} className={error ? 'input input-error' : 'input'} {...rest} />
-      {error && <p className="field-error">{error}</p>}
+      <input
+        {...rest}
+        id={id}
+        className={error ? 'input input-error' : 'input'}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+      />
+      {error && (
+        <p id={errorId} className="field-error">
+          {error}
+        </p>
+      )}
     </div>
   );
 };
