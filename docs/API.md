@@ -224,12 +224,17 @@ Errors:  401  not logged in
 ### 9. Get event log: `GET /api/repos/:repoId/events`
 
 - **Auth:** Logged in + ownership check
-- **Notes:** Newest first. `limit` is an optional **query parameter** (part of the URL after `?`), e.g. `/api/repos/11/events?limit=20`. Default 20.
+- **Notes:** Newest first. `limit` is an optional **query parameter** (part of the URL after `?`), e.g. `/api/repos/11/events?limit=20`. Default 20. `details` holds extra info about the event (see the table under route 10). It can be `{}` if there's nothing extra.
 
 ```
 Input:   optional query: ?limit=number
 Output:  200 OK
-         [ { "id": number, "type": "pr_merged" | "tests_passed" | "tests_failed", "createdAt": "string" } ]
+         [ { "id": number, "type": "pr_merged" | "tests_passed" | "tests_failed",
+             "details": object, "createdAt": "string" } ]
+
+Example: { "id": 7, "type": "pr_merged",
+           "details": { "number": 12, "title": "add login route", "url": "https://github.com/..." },
+           "createdAt": "2026-10-09T10:42:00Z" }
 Errors:  401  not logged in
          404  repo not found (or not yours)
          500  unexpected server error
@@ -248,6 +253,13 @@ Errors:  401  not logged in
 | `workflow_run`, action `completed`, conclusion `failure`    | `tests_failed`                   |
 | Anything else (including GitHub's `ping` when first set up) | Nothing, but still respond `200` |
 
+- **Event details:** along with the type, the server saves useful info from GitHub's payload in `events.details` (JSONB). This powers the event log ("PR merged #12 add login route") and future speech bubbles.
+
+| Our type                        | `details` saved                                                         |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| `pr_merged`                     | `number`, `title`, `url` of the PR                                      |
+| `tests_passed` / `tests_failed` | workflow `name`, `url` of the run, and the PR `number` if it ran on one |
+
 ```
 Input:   Headers set by GitHub:
            X-GitHub-Event        event name, e.g. "pull_request"
@@ -264,15 +276,16 @@ Duplicates: same X-GitHub-Delivery seen before → 200, ignored (not an error)
 
 ## Decisions log
 
-| Decision                   | Choice                                                   | Why                                                          |
-| -------------------------- | -------------------------------------------------------- | ------------------------------------------------------------ |
-| Dashboard token storage    | httpOnly cookie                                          | Safe from XSS; common real-world pattern                     |
-| Extension token storage    | `chrome.storage` + Bearer header                         | Extensions can't easily share the dashboard's cookie         |
-| Dashboard hosting          | Served by Express                                        | Same domain, so the cookie stays first-party                 |
-| Same repo, different users | Allowed; each gets its own webhook URL `/github/:repoId` | The team can all use the project repo; no guessing which row |
-| Someone else's repo        | `404`                                                    | Hides which repo IDs exist                                   |
-| Repo with no pet           | `404` "No pet yet"                                       | The pet doesn't exist yet                                    |
-| Error format               | `{ "error": "message" }`                                 | Every client handles errors the same way                     |
-| Log out                    | Public, always `200`                                     | Logging out twice is harmless, so it can never get stuck     |
-| Webhook secrets            | One per connected repo, stored in the database           | No global webhook secret env var                             |
-| Webhook URL                | Built from `PUBLIC_URL` env var                          | The server needs its own public address to build the URL     |
+| Decision                   | Choice                                                   | Why                                                                                |
+| -------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Dashboard token storage    | httpOnly cookie                                          | Safe from XSS; common real-world pattern                                           |
+| Extension token storage    | `chrome.storage` + Bearer header                         | Extensions can't easily share the dashboard's cookie                               |
+| Dashboard hosting          | Served by Express                                        | Same domain, so the cookie stays first-party                                       |
+| Same repo, different users | Allowed; each gets its own webhook URL `/github/:repoId` | The team can all use the project repo; no guessing which row                       |
+| Someone else's repo        | `404`                                                    | Hides which repo IDs exist                                                         |
+| Repo with no pet           | `404` "No pet yet"                                       | The pet doesn't exist yet                                                          |
+| Error format               | `{ "error": "message" }`                                 | Every client handles errors the same way                                           |
+| Log out                    | Public, always `200`                                     | Logging out twice is harmless, so it can never get stuck                           |
+| Webhook secrets            | One per connected repo, stored in the database           | No global webhook secret env var                                                   |
+| Webhook URL                | Built from `PUBLIC_URL` env var                          | The server needs its own public address to build the URL                           |
+| Event details              | `details` JSONB column on `events`                       | Log and speech bubbles can name the PR; new event types fit without a table change |
