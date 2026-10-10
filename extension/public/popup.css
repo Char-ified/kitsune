@@ -1,0 +1,159 @@
+/* The same night palette as the dashboard (dashboard/src/styles/theme.css).
+   The extension is built separately, so it keeps its own small copy. */
+:root {
+  --color-bg: #0f1220;
+  --color-panel: #1a1f33;
+  --color-border: #2c3350;
+  --color-text: #e8e6e3;
+  --color-muted: #9aa0b5;
+  --color-vermilion: #e8452c;
+  --color-gold: #f2b544;
+  --font-ui: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-pixel: 'Pixelify Sans', monospace;
+}
+
+/* A popup is as big as its content, so the width is set here. */
+body {
+  width: 300px;
+  margin: 0;
+  padding: 16px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+/* The hidden attribute loses to any display rule below, so make it always win. */
+[hidden] {
+  display: none !important;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.logo {
+  width: 24px;
+  height: 24px;
+  image-rendering: pixelated;
+}
+
+.brand {
+  font-family: var(--font-pixel);
+  font-size: 15px;
+}
+
+h1 {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.muted {
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+
+label {
+  display: block;
+  color: var(--color-muted);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: var(--color-panel);
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--color-gold);
+}
+
+.error {
+  color: var(--color-vermilion);
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.btn {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 10px 16px;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--color-vermilion);
+  color: var(--color-text);
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.btn:disabled {
+  background: var(--color-border);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.switch {
+  margin: 8px 0 0;
+  text-align: center;
+}
+
+a {
+  color: var(--color-gold);
+}
+
+.stage {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+  padding: 12px 0;
+  background: var(--color-panel);
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+}
+
+.fox {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+}
