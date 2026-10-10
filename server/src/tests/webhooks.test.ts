@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import app from '../app.js';
+import pool from '../db.js';
 import { isValidSignature, signPayload } from '../webhooks/signature.js';
 
 // Signs up a user and connects one repo, like the dashboard would.
@@ -25,17 +26,66 @@ const githubSignature = (body: string, secret: string): string =>
   `sha256=${crypto.createHmac('sha256', secret).update(body).digest('hex')}`;
 
 // Sends a delivery the way GitHub does: no login cookie, a JSON body, a signature header.
-const deliver = (url: string, body: string, signature?: string) => {
+const deliver = (
+  url: string,
+  body: string,
+  signature?: string,
+  { event = 'ping', deliveryId = crypto.randomUUID() as string } = {},
+) => {
   const req = request(app)
     .post(url)
     .set('Content-Type', 'application/json')
-    .set('X-GitHub-Event', 'ping')
-    .set('X-GitHub-Delivery', crypto.randomUUID());
+    .set('X-GitHub-Event', event)
+    .set('X-GitHub-Delivery', deliveryId);
   if (signature !== undefined) req.set('X-Hub-Signature-256', signature);
   return req.send(body);
 };
 
+// Sends a correctly signed delivery of one GitHub event type.
+const deliverEvent = (
+  repo: { webhookUrl: string; secret: string },
+  event: string,
+  payload: object,
+  deliveryId?: string,
+) => {
+  const body = JSON.stringify(payload);
+  return deliver(repo.webhookUrl, body, githubSignature(body, repo.secret), { event, deliveryId });
+};
+
+const savedEvents = async (repoId: number) => {
+  const result = await pool.query(
+    'SELECT type, details, github_delivery_id FROM events WHERE repo_id = $1 ORDER BY id',
+    [repoId],
+  );
+  return result.rows;
+};
+
 const ping = JSON.stringify({ zen: 'Keep it logically awesome.', hook_id: 1 });
+
+// Trimmed-down versions of GitHub's payloads, with a few fields we don't read left in.
+const mergedPullRequest = {
+  action: 'closed',
+  number: 12,
+  pull_request: {
+    number: 12,
+    title: 'add login route',
+    html_url: 'https://github.com/fox/den/pull/12',
+    merged: true,
+    state: 'closed',
+  },
+  repository: { full_name: 'fox/den' },
+};
+
+const workflowRun = (conclusion: string | null, action = 'completed') => ({
+  action,
+  workflow_run: {
+    name: 'CI',
+    html_url: 'https://github.com/fox/den/actions/runs/99',
+    conclusion,
+    pull_requests: [{ number: 12 }],
+  },
+  repository: { full_name: 'fox/den' },
+});
 
 describe('POST /api/webhooks/github/:repoId', () => {
   it('accepts a delivery signed with the repo secret', async () => {
@@ -121,6 +171,150 @@ describe('POST /api/webhooks/github/:repoId', () => {
     const res = await agent.post('/api/repos').send({ fullName: 'fox/second-den' });
 
     expect(res.status).toBe(201);
+  });
+});
+
+describe('saving events', () => {
+  it('saves a merged pull request with its number, title, and url', async () => {
+    const repo = await setUp();
+
+    const res = await deliverEvent(repo, 'pull_request', mergedPullRequest, 'delivery-1');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ received: true });
+    expect(await savedEvents(repo.repoId)).toEqual([
+      {
+        type: 'pr_merged',
+        details: {
+          number: 12,
+          title: 'add login route',
+          url: 'https://github.com/fox/den/pull/12',
+        },
+        github_delivery_id: 'delivery-1',
+      },
+    ]);
+  });
+
+  it('saves a passed workflow run with its name, url, and pull request number', async () => {
+    const repo = await setUp();
+
+    await deliverEvent(repo, 'workflow_run', workflowRun('success'));
+
+    expect(await savedEvents(repo.repoId)).toMatchObject([
+      {
+        type: 'tests_passed',
+        details: { name: 'CI', url: 'https://github.com/fox/den/actions/runs/99', number: 12 },
+      },
+    ]);
+  });
+
+  it('saves a failed workflow run', async () => {
+    const repo = await setUp();
+
+    await deliverEvent(repo, 'workflow_run', workflowRun('failure'));
+
+    expect(await savedEvents(repo.repoId)).toMatchObject([{ type: 'tests_failed' }]);
+  });
+
+  it('leaves out the pull request number when the run was not for one', async () => {
+    const repo = await setUp();
+    const run = workflowRun('success');
+    run.workflow_run.pull_requests = [];
+
+    await deliverEvent(repo, 'workflow_run', run);
+
+    const [event] = await savedEvents(repo.repoId);
+    expect(event.details).toEqual({
+      name: 'CI',
+      url: 'https://github.com/fox/den/actions/runs/99',
+    });
+  });
+
+  it.each([
+    ['a ping', 'ping', { zen: 'Keep it logically awesome.' }],
+    ['an opened pull request', 'pull_request', { ...mergedPullRequest, action: 'opened' }],
+    [
+      'a pull request closed without merging',
+      'pull_request',
+      { action: 'closed', pull_request: { ...mergedPullRequest.pull_request, merged: false } },
+    ],
+    ['a workflow run that only just started', 'workflow_run', workflowRun(null, 'requested')],
+    ['a cancelled workflow run', 'workflow_run', workflowRun('cancelled')],
+    ['an event type we do not track', 'issues', { action: 'opened' }],
+    ['a pull_request delivery with an unexpected shape', 'pull_request', { action: 'closed' }],
+    ['a body that is JSON but not an object', 'pull_request', ['closed']],
+  ])('answers 200 but saves nothing for %s', async (_label, event, payload) => {
+    const repo = await setUp();
+
+    const res = await deliverEvent(repo, event, payload);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ received: true });
+    expect(await savedEvents(repo.repoId)).toEqual([]);
+  });
+
+  it('saves a repeated delivery only once, and still answers 200', async () => {
+    const repo = await setUp();
+    await deliverEvent(repo, 'pull_request', mergedPullRequest, 'same-delivery');
+
+    const again = await deliverEvent(repo, 'pull_request', mergedPullRequest, 'same-delivery');
+
+    expect(again.status).toBe(200);
+    expect(again.body).toEqual({ received: true });
+    expect(await savedEvents(repo.repoId)).toHaveLength(1);
+  });
+
+  it('saves separate deliveries as separate events', async () => {
+    const repo = await setUp();
+
+    await deliverEvent(repo, 'pull_request', mergedPullRequest);
+    await deliverEvent(repo, 'workflow_run', workflowRun('success'));
+
+    const events = await savedEvents(repo.repoId);
+    expect(events.map((event) => event.type)).toEqual(['pr_merged', 'tests_passed']);
+  });
+
+  it('saves the event against the repo in the URL only', async () => {
+    const mine = await setUp('mine@example.com');
+    const theirs = await setUp('theirs@example.com');
+
+    await deliverEvent(mine, 'pull_request', mergedPullRequest);
+
+    expect(await savedEvents(mine.repoId)).toHaveLength(1);
+    expect(await savedEvents(theirs.repoId)).toEqual([]);
+  });
+
+  it('saves nothing when the signature is wrong', async () => {
+    const repo = await setUp();
+    const body = JSON.stringify(mergedPullRequest);
+
+    const res = await deliver(repo.webhookUrl, body, githubSignature(body, 'not-the-secret'), {
+      event: 'pull_request',
+    });
+
+    expect(res.status).toBe(401);
+    expect(await savedEvents(repo.repoId)).toEqual([]);
+  });
+
+  it('rejects a signed body that is not JSON', async () => {
+    const repo = await setUp();
+    const body = 'payload=%7B%22action%22%3A%22closed%22%7D';
+
+    const res = await deliver(repo.webhookUrl, body, githubSignature(body, repo.secret), {
+      event: 'pull_request',
+    });
+
+    expect(res.status).toBe(400);
+    expect(await savedEvents(repo.repoId)).toEqual([]);
+  });
+
+  it('removes the events when the repo is disconnected', async () => {
+    const repo = await setUp();
+    await deliverEvent(repo, 'pull_request', mergedPullRequest);
+
+    await repo.agent.delete(`/api/repos/${repo.repoId}`);
+
+    expect(await savedEvents(repo.repoId)).toEqual([]);
   });
 });
 
