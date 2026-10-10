@@ -22,6 +22,35 @@ npm install
 cp server/.env.example server/.env
 ```
 
+### Set up your local database
+
+You need PostgreSQL running on your computer. Create a database and its tables:
+
+```bash
+createdb kitsune_dev
+psql -d kitsune_dev -f server/db/schema.sql
+```
+
+Then fill in `server/.env`:
+
+```
+DATABASE_URL=postgres://localhost/kitsune_dev
+JWT_SECRET=<any long random string>
+PUBLIC_URL=http://localhost:3000
+```
+
+To generate a `JWT_SECRET`:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Your local database is yours alone. It's safe to fill with test data or wipe. The shared Supabase database is only used by the deployed app.
+
+### Try it
+
+Run the server and the dashboard (two terminals), then open http://localhost:5173/signup and create an account. You should land on the dashboard.
+
 ### Run the server
 
 ```bash
@@ -52,6 +81,7 @@ In Chrome, go to `chrome://extensions`, turn on **Developer mode**, click **Load
 
 - [API contract](docs/API.md): every route, its input and output, and the decisions behind them
 - [Contributing](CONTRIBUTING.md): branches, commits, and pull requests
+- [User flow](docs/USER-FLOW.md): every page, how they connect, and why
 
 ## Useful scripts (run from the root)
 
