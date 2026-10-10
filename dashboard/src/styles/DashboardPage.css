@@ -1,0 +1,184 @@
+/* Title on the left, "Connect a repo" button on the right. */
+.dashboard-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-5);
+}
+
+.dashboard-title {
+  font-family: var(--font-pixel);
+  font-size: 32px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dashboard-muted {
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.dashboard-loading {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+}
+
+/* Three cards per row. Extra cards wrap onto the next row on their own. */
+.repo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.repo-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-panel);
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+}
+
+/* The dark "stage" the fox stands on. */
+.repo-card-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-4) 0;
+  background: var(--color-bg);
+  color: var(--color-border);
+}
+
+/* The line under the fox. currentColor lets each mood change it with one rule. */
+.repo-card-stage::after {
+  content: '';
+  width: 72px;
+  height: 3px;
+  margin-top: var(--space-2);
+  background: currentColor;
+}
+
+.repo-card-stage-happy {
+  color: var(--color-jade);
+}
+
+.repo-card-stage-normal {
+  color: var(--color-gold);
+}
+
+.repo-card-stage-sick {
+  color: var(--color-vermilion);
+}
+
+.repo-card-fox {
+  width: 96px;
+  height: 96px;
+  image-rendering: pixelated;
+}
+
+.repo-card-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.repo-card-name {
+  font-family: var(--font-pixel);
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.repo-card-repo {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* The button stretches, the text link keeps its own width. */
+.repo-card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.repo-card-actions .btn {
+  flex: 1;
+}
+
+.repo-card-link {
+  color: var(--color-text);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.repo-card-link:hover {
+  text-decoration: underline;
+}
+
+/* The dashed "add another" card. It is one big link. */
+.repo-card-add {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  height: 100%;
+  min-height: 280px;
+  box-sizing: border-box;
+  border: 2px dashed var(--color-border);
+  border-radius: 4px;
+  color: var(--color-text);
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  text-decoration: none;
+}
+
+.repo-card-add:hover {
+  border-color: var(--color-gold);
+}
+
+.repo-card-plus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: var(--color-panel);
+  border: 2px solid var(--color-border);
+  font-size: 28px;
+}
+
+.dashboard-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8) 0;
+  text-align: center;
+}
+
+.dashboard-empty-fox {
+  width: 140px;
+  height: 140px;
+  image-rendering: pixelated;
+}
+
+/* Fewer columns as the screen gets narrower. */
+@media (max-width: 1000px) {
+  .repo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .repo-grid {
+    grid-template-columns: 1fr;
+  }
+}
