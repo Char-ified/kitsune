@@ -1,9 +1,8 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import pool from '../db.js';
-import { hashPassword } from './password.js';
+import { hashPassword, verifyPassword } from './password.js';
 import { createToken } from './token.js';
-import { verifyPassword } from './password.js';
 import { requireAuth } from './middleware.js';
 
 const authRouter = express.Router();
@@ -11,7 +10,7 @@ const authRouter = express.Router();
 const COOKIE_NAME = 'token';
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-// Settings for the login cookie (see docs/AI.md, "Cookie Settings").
+// Settings for the login cookie (see docs/API.md, "Cookie Settings").
 const cookieOptions = {
   httpOnly: true, // page scripts cant read it
   secure: process.env.NODE_ENV === 'production', // HTTPS only once deployed
@@ -19,10 +18,26 @@ const cookieOptions = {
   maxAge: SEVEN_DAYS_MS, // Matches the tokens 7-day expiry
 };
 
+const MIN_PASSWORD_LENGTH = 8;
+
+// Emails are compared in lowercase so "Maia@x.com" and "maia@x.com" are one account
+const cleanEmail = (value: unknown): string | null =>
+  typeof value === 'string' ? value.trim().toLowerCase() : null;
+
 authRouter.post('/signup', async (req: Request, res: Response) => {
-  const { email, password } = req.body ?? {};
-  if (!email || !password) {
-    res.status(400).json({ error: 'Email and password are required' });
+  const email = cleanEmail(req.body?.email);
+  const password: unknown = req.body?.password;
+  if (
+    !email ||
+    !email.includes('@') ||
+    typeof password !== 'string' ||
+    password.length < MIN_PASSWORD_LENGTH
+  ) {
+    res
+      .status(400)
+      .json({
+        error: `Enter a valid email and a password of at least ${MIN_PASSWORD_LENGTH} characters`,
+      });
     return;
   }
 
@@ -49,9 +64,10 @@ authRouter.post('/signup', async (req: Request, res: Response) => {
 });
 
 authRouter.post('/login', async (req: Request, res: Response) => {
-  const { email, password } = req.body ?? {};
-  if (!email || !password) {
-    res.status(400).json({ error: 'Email and password required' });
+  const email = cleanEmail(req.body?.email);
+  const password: unknown = req.body?.password;
+  if (!email || typeof password !== 'string' || !password) {
+    res.status(400).json({ error: 'Email and password are required' });
     return;
   }
 
@@ -60,7 +76,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
   ]);
   const row = result.rows[0];
 
-  // Same message whether the eamil or the password is wrong, so nobody can
+  // Same message whether the email or the password is wrong, so nobody can
   // find out which emails have accounts (user enumeration)
   if (!row || !(await verifyPassword(password, row.password_hash))) {
     res.status(401).json({ error: 'Invalid email or password' });
@@ -87,7 +103,7 @@ authRouter.get('/me', requireAuth, async (req: Request, res: Response) => {
   const result = await pool.query('SELECT id, email FROM users WHERE id = $1', [res.locals.userId]);
   const user = result.rows[0];
 
-  // The token was valid but the account no longer exsists
+  // The token was valid but the account no longer exists
   if (!user) {
     res.status(401).json({ error: 'Not logged in' });
     return;
