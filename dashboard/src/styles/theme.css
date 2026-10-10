@@ -1,0 +1,35 @@
+/* dashboard/src/styles/theme.css */
+
+/* :root = "the whole page". Variables here can be used everywhere. */
+:root {
+  /* Colors: from the Figma "Night palette" */
+  --color-bg: #0f1220; /* page background */
+  --color-panel: #1a1f33; /* cards and panels */
+  --color-border: #2c3350; /* panel borders */
+  --color-text: #e8e6e3; /* main text */
+  --color-muted: #9aa0b5; /* secondary text */
+  --color-vermilion: #e8452c; /* buttons, errors, sick */
+  --color-gold: #f2b544; /* focus, normal */
+  --color-jade: #4fb89a; /* success, happy */
+  /* Fonts */
+  --font-ui: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-pixel: 'Pixelify Sans', monospace;
+  /* Spacing scale (from the Figma build notes) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  margin: 0;
+}

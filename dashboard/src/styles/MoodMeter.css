@@ -1,0 +1,28 @@
+/* the bar */
+.mood-meter {
+  display: flex;
+  gap: 3px;
+}
+
+/* each box, filled or not */
+.segment {
+  flex: 1; /* means “every segment takes an equal share of the bar’s width.” */
+  height: 8px;
+  background: var(--color-border);
+}
+
+.segment-filled {
+  background: currentColor;
+}
+
+.mood-meter-happy {
+  color: var(--color-jade);
+}
+
+.mood-meter-normal {
+  color: var(--color-gold);
+}
+
+.mood-meter-sick {
+  color: var(--color-vermilion);
+}

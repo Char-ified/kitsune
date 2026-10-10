@@ -1,0 +1,31 @@
+/* dashboard/src/styles/Button.css */
+
+.btn {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600; /* semi-bold */
+  padding: var(--space-3) var(--space-5); /* 12px top/bottom, 24px left/right */
+  border: 2px solid transparent; /* 2px border from the Figma notes; invisible by default */
+  border-radius: 4px; /* slightly squared corners */
+  cursor: pointer; /* hand cursor on hover */
+}
+
+/* the filled vermilion button */
+.btn-primary {
+  background: var(--color-vermilion);
+  color: var(--color-text);
+}
+
+/* the outlined button */
+.btn-secondary {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+/* when button is disabled */
+.btn:disabled {
+  background: var(--color-border);
+  color: var(--color-muted);
+  cursor: not-allowed;
+}

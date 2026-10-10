@@ -1,0 +1,29 @@
+.mood-badge {
+  display: inline-flex; /* dot and word side by side - inline */
+  align-items: center; /* vertically centers dot and word */
+  gap: var(--space-1); /* space between dot and word */
+  padding: var(--space-1) var(--space-2); /* top/buttom left/right */
+  border: 2px solid currentColor; /* currentColor means “use this element’s text color.” */
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-transform: uppercase; /* shows happy as HAPPY without JS */
+}
+
+.mood-dot {
+  width: 8px;
+  height: 8px;
+  background: currentColor;
+}
+
+.mood-badge-happy {
+  color: var(--color-jade);
+}
+
+.mood-badge-normal {
+  color: var(--color-gold);
+}
+
+.mood-badge-sick {
+  color: var(--color-vermilion);
+}
