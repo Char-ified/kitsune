@@ -30,3 +30,15 @@ main {
   height: 28px;
   image-rendering: pixelated;
 }
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.header-nav a {
+  color: var(--color-gold);
+  font-size: 14px;
+  text-decoration: none;
+}
