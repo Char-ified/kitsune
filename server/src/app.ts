@@ -10,8 +10,14 @@ import { requireAuth } from './auth/middleware.js';
 import { requireRepoOwner } from './auth/ownership.js';
 import petRouter from './pets/routes.js';
 import reposRouter from './repos/routes.js';
+import webhooksRouter from './webhooks/routes.js';
 
 const app = express();
+
+// Webhook signatures are checked against the exact bytes GitHub sent, so these routes
+// keep the body raw. This must come before express.json(), which then skips the request
+// because its body has already been read.
+app.use('/api/webhooks', express.raw({ type: '*/*' }));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -31,6 +37,9 @@ app.use('/api/auth', authRouter);
 app.use('/api/repos/:repoId/pet', requireAuth, requireRepoOwner, petRouter);
 
 app.use('/api/repos', reposRouter);
+
+// No requireAuth here: GitHub can't log in. Each delivery proves itself with a signature.
+app.use('/api/webhooks', webhooksRouter);
 
 // Unknown /api routes: answer in the contract's JSON error shape, not an HTML page.
 app.use('/api', (_req: Request, res: Response) => {
