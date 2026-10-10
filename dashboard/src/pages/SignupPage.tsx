@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
 import { useAuth, type User } from '../auth/AuthContext';
+import { AuthShell } from '../components/AuthShell';
 import { Button } from '../components/Button';
 import { Panel } from '../components/Panel';
 import { TextInput } from '../components/TextInput';
@@ -46,8 +47,9 @@ export const SignupPage = () => {
   };
 
   return (
-    <div className="auth-page">
+    <AuthShell scene="crescent">
       <Panel title="Sign up">
+        <p className="auth-subtitle">Create an account to meet your guardian.</p>
         <form onSubmit={handleSubmit} noValidate>
           <TextInput
             label="Email"
@@ -74,6 +76,6 @@ export const SignupPage = () => {
           Already have an account? <Link to="/login">Log in</Link>
         </p>
       </Panel>
-    </div>
+    </AuthShell>
   );
 };

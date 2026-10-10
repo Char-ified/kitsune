@@ -16,7 +16,10 @@ export const Layout = () => {
   return (
     <>
       <header>
-        <span className="header-title">Kitsune Repo Pet</span>
+        <span className="header-brand">
+          <img className="header-logo" src="/kitsune-happy.png" alt="" />
+          <span className="header-title">Kitsune Repo Pet</span>
+        </span>
         {status === 'loggedIn' && (
           <Button variant="secondary" onClick={handleLogout}>
             Log out

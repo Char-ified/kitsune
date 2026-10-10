@@ -1,10 +1,82 @@
-/* Shared by the log in and sign up pages: a narrow, centered form. */
-.auth-page {
-  max-width: 420px;
-  margin: var(--space-7) auto 0;
+/* Two columns: hero on the left, form on the right.
+   min-height makes the grid fill the screen below the header,
+   so align-items can center everything vertically. */
+.auth-shell {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--space-8);
+  align-items: center;
+  min-height: calc(100vh - 160px);
 }
 
-.auth-page .btn {
+/* The form column: narrower, and pushed to the right edge. */
+.auth-form {
+  width: 100%;
+  max-width: 420px;
+  justify-self: end;
+}
+
+.auth-headline {
+  font-family: var(--font-pixel);
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1.1;
+  margin: 0 0 var(--space-4);
+}
+
+/* A taller, roomier panel with a bigger title, only on the auth pages. */
+.auth-form .panel {
+  padding: var(--space-7) var(--space-6);
+}
+
+.auth-form .panel-title {
+  font-size: 36px;
+  margin-bottom: var(--space-2);
+}
+
+.auth-subtitle {
+  margin: 0 0 var(--space-6);
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.auth-form .field {
+  margin-bottom: var(--space-5);
+}
+
+.auth-tagline {
+  max-width: 44ch;
+  margin: 0 0 var(--space-6);
+  color: var(--color-muted);
+  line-height: 1.5;
+}
+
+/* Placeholder box for the fox illustration. */
+.auth-art {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  margin-bottom: var(--space-5);
+  image-rendering: pixelated; /* keeps pixel art crisp instead of blurry when scaled */
+}
+
+.auth-steps {
+  display: flex;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.auth-steps span {
+  color: var(--color-gold);
+}
+
+.auth-form .btn {
   width: 100%;
 }
 
@@ -16,4 +88,16 @@
 
 .auth-switch a {
   color: var(--color-gold);
+}
+
+/* On narrow screens, stack the columns and hide the art. */
+@media (max-width: 720px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .auth-art {
+    display: none;
+  }
 }
