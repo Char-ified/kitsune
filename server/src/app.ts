@@ -9,6 +9,7 @@ import authRouter from './auth/routes.js';
 import { requireAuth } from './auth/middleware.js';
 import { requireRepoOwner } from './auth/ownership.js';
 import petRouter from './pets/routes.js';
+import reposRouter from './repos/routes.js';
 
 const app = express();
 app.use(express.json());
@@ -28,6 +29,8 @@ app.use('/api/auth', authRouter);
 // Every pet route needs a logged-in user who owns the repo in the URL, so both checks
 // run here, once, before the pet router sees the request.
 app.use('/api/repos/:repoId/pet', requireAuth, requireRepoOwner, petRouter);
+
+app.use('/api/repos', reposRouter);
 
 // Unknown /api routes: answer in the contract's JSON error shape, not an HTML page.
 app.use('/api', (_req: Request, res: Response) => {
