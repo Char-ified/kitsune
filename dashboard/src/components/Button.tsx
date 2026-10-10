@@ -6,5 +6,5 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 export const Button = ({ variant = 'primary', ...rest }: ButtonProps) => {
-  return <button className={`btn btn-${variant}`} {...rest} />;
+  return <button {...rest} className={`btn btn-${variant}`} />;
 };

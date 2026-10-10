@@ -17,7 +17,7 @@ export const MoodMeter = ({ mood }: MoodMeterProps) => {
   const filled = FILLED_SEGMENTS[mood];
 
   return (
-    <div className={`mood-meter mood-meter-${mood}`}>
+    <div className={`mood-meter mood-meter-${mood}`} role="img" aria-label={`Mood: ${mood}`}>
       {Array.from({ length: TOTAL_SEGMENTS }, (_, i) => (
         <span key={i} className={i < filled ? 'segment segment-filled' : 'segment'} />
       ))}
