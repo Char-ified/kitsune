@@ -1,0 +1,247 @@
+/* Headline on the left, "Updated 10:42" chip on the right. */
+.pet-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--space-4);
+  margin: var(--space-4) 0 var(--space-6);
+}
+
+.pet-headline {
+  font-family: var(--font-pixel);
+  font-size: 32px;
+  font-weight: 600;
+  margin: 0 0 var(--space-2);
+}
+
+.pet-muted {
+  color: var(--color-muted);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.pet-updated {
+  border: 2px solid var(--color-border);
+  border-radius: 4px;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: var(--space-1) var(--space-2);
+  white-space: nowrap;
+}
+
+/* Wide pet panel, narrower events panel, same height. */
+.pet-columns {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: var(--space-5);
+  align-items: stretch;
+  margin-bottom: var(--space-5);
+}
+
+/* The dark stage with a faint grid, like a game screen. */
+.pet-stage {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-5) 0;
+  margin-bottom: var(--space-4);
+  background-color: var(--color-bg);
+  background-image:
+    linear-gradient(var(--color-panel) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-panel) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.pet-fox {
+  width: 252px;
+  height: 252px;
+  image-rendering: pixelated;
+}
+
+/* Name, badge, and Rename on the left. The quote is pushed to the right. */
+.pet-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 48px;
+}
+
+.pet-name {
+  font-family: var(--font-pixel);
+  font-size: 28px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pet-quote {
+  margin-left: auto;
+  color: var(--color-muted);
+  font-size: 14px;
+  font-style: italic;
+}
+
+/* A button that looks like a text link. */
+.pet-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-gold);
+  font-family: var(--font-ui);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pet-link:hover {
+  text-decoration: underline;
+}
+
+.pet-rename {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 48px;
+}
+
+.pet-rename .input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+}
+
+.pet-rename .btn {
+  padding: var(--space-2) var(--space-4);
+}
+
+.pet-rename .field-error {
+  width: 100%;
+}
+
+.pet-label {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.event-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* One event: the time on the left, title and detail stacked on the right. */
+.event {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 2px solid var(--color-border);
+  font-family: var(--font-mono);
+}
+
+.event-time {
+  color: var(--color-muted);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.event-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  margin: 0;
+}
+
+.event-detail {
+  color: var(--color-muted);
+  font-size: 12px;
+  margin: var(--space-1) 0 0;
+}
+
+.event-pr_merged .event-title,
+.event-tests_passed .event-title {
+  color: var(--color-jade);
+}
+
+.event-tests_failed .event-title {
+  color: var(--color-vermilion);
+}
+
+.pet-listening {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  margin: var(--space-4) 0 0;
+}
+
+.pet-empty {
+  padding: var(--space-8) 0;
+  text-align: center;
+}
+
+.pet-empty-title {
+  font-family: var(--font-pixel);
+  font-size: 20px;
+  margin: 0 0 var(--space-2);
+}
+
+/* Repo name on the left, its actions on the right. */
+.pet-repo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.pet-repo-name {
+  font-family: var(--font-mono);
+  margin: 0 0 var(--space-1);
+}
+
+.pet-repo-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.pet-confirm {
+  text-align: right;
+}
+
+.pet-confirm p {
+  font-size: 14px;
+  margin: 0 0 var(--space-3);
+}
+
+.pet-confirm .pet-repo-actions {
+  justify-content: flex-end;
+}
+
+/* Outlined in red: a button that deletes things should look different. */
+.pet-danger {
+  background: transparent;
+  border-color: var(--color-vermilion);
+  color: var(--color-vermilion);
+}
+
+.pet-danger:hover {
+  background: var(--color-vermilion);
+  color: var(--color-text);
+}
+
+@media (max-width: 900px) {
+  .pet-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .pet-repo {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pet-confirm {
+    text-align: left;
+  }
+}
