@@ -1,0 +1,19 @@
+/* Shared by the log in and sign up pages: a narrow, centered form. */
+.auth-page {
+  max-width: 420px;
+  margin: var(--space-7) auto 0;
+}
+
+.auth-page .btn {
+  width: 100%;
+}
+
+.auth-switch {
+  margin: var(--space-4) 0 0;
+  color: var(--color-muted);
+  font-size: 14px;
+}
+
+.auth-switch a {
+  color: var(--color-gold);
+}
