@@ -55,15 +55,15 @@ There are three kinds of route:
 
 ## Status codes
 
-| Status | Meaning                                                                          |
-| ------ | -------------------------------------------------------------------------------- |
-| `200`  | OK                                                                               |
-| `201`  | Created: something new was saved                                                 |
-| `400`  | Bad request: input missing or invalid                                            |
-| `401`  | Authentication failed: not logged in, or a bad token                             |
-| `404`  | Not found, **or not yours** (we don't use `403`, to avoid revealing what exists) |
-| `409`  | Conflict: clashes with something that already exists                             |
-| `500`  | Unexpected server error (global error handler)                                   |
+| Status | Meaning                                                                                                                          |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `200`  | OK                                                                                                                               |
+| `201`  | Created: something new was saved                                                                                                 |
+| `400`  | Bad request: input missing or invalid                                                                                            |
+| `401`  | Authentication failed: not logged in, or a bad token                                                                             |
+| `404`  | Not found, **or not yours** (we don't use `403`, to avoid revealing what exists). Unknown `/api/...` URLs also get a JSON `404`. |
+| `409`  | Conflict: clashes with something that already exists                                                                             |
+| `500`  | Unexpected server error (global error handler)                                                                                   |
 
 ## Error format
 
@@ -75,19 +75,33 @@ Every error response uses the same shape:
 
 ## Routes
 
-| #   | Action         | Method | URL                            | Auth      |
-| --- | -------------- | ------ | ------------------------------ | --------- |
-| 0   | Health check   | `GET`  | `/api/health`                  | Public    |
-| 1   | Sign up        | `POST` | `/api/auth/signup`             | Public    |
-| 2   | Log in         | `POST` | `/api/auth/login`              | Public    |
-| 3   | Log out        | `POST` | `/api/auth/logout`             | Public    |
-| 4   | Who am I?      | `GET`  | `/api/auth/me`                 | Logged in |
-| 5   | List my repos  | `GET`  | `/api/repos`                   | Logged in |
-| 6   | Connect a repo | `POST` | `/api/repos`                   | Logged in |
-| 7   | Create the pet | `POST` | `/api/repos/:repoId/pet`       | Logged in |
-| 8   | Get pet + mood | `GET`  | `/api/repos/:repoId/pet`       | Logged in |
-| 9   | Get event log  | `GET`  | `/api/repos/:repoId/events`    | Logged in |
-| 10  | GitHub event   | `POST` | `/api/webhooks/github/:repoId` | Signature |
+| #   | Action             | Method   | URL                                 | Auth      |
+| --- | ------------------ | -------- | ----------------------------------- | --------- |
+| 0   | Health check       | `GET`    | `/api/health`                       | Public    |
+| 1   | Sign up            | `POST`   | `/api/auth/signup`                  | Public    |
+| 2   | Log in             | `POST`   | `/api/auth/login`                   | Public    |
+| 3   | Log out            | `POST`   | `/api/auth/logout`                  | Public    |
+| 4   | Who am I?          | `GET`    | `/api/auth/me`                      | Logged in |
+| 5   | List my repos      | `GET`    | `/api/repos`                        | Logged in |
+| 6   | Connect a repo     | `POST`   | `/api/repos`                        | Logged in |
+| 7   | Create the pet     | `POST`   | `/api/repos/:repoId/pet`            | Logged in |
+| 8   | Get pet + mood     | `GET`    | `/api/repos/:repoId/pet`            | Logged in |
+| 9   | Get event log      | `GET`    | `/api/repos/:repoId/events`         | Logged in |
+| 10  | GitHub event       | `POST`   | `/api/webhooks/github/:repoId`      | Signature |
+| 11  | Update the pet     | `PATCH`  | `/api/repos/:repoId/pet`            | Logged in |
+| 12  | Disconnect a repo  | `DELETE` | `/api/repos/:repoId`                | Logged in |
+| 13  | New webhook secret | `POST`   | `/api/repos/:repoId/webhook-secret` | Logged in |
+
+### CRUD at a glance
+
+| Resource | Create      | Read    | Update                        | Delete              |
+| -------- | ----------- | ------- | ----------------------------- | ------------------- |
+| User     | #1 sign up  | #4 me   | not in MVP                    | not in MVP          |
+| Repo     | #6 connect  | #5 list | #13 new secret                | #12 disconnect      |
+| Pet      | #7 create   | #8 get  | #11 rename / change character | with its repo (#12) |
+| Event    | #10 webhook | #9 log  | never                         | never               |
+
+Events are a record of what happened, so they are never edited or deleted on their own. Not every resource should have full CRUD.
 
 ## Route details
 
@@ -105,14 +119,14 @@ Output:  200 OK
 ### 1. Sign up: `POST /api/auth/signup`
 
 - **Auth:** Public
-- **Notes:** The user sends their real password. The **server** hashes it. If the browser sent a hash, the hash would effectively become the password. Signing up also logs the user in: the server sets the cookie (for the dashboard) and returns the token in the body (for the extension).
+- **Notes:** The user sends their real password. The **server** hashes it. If the browser sent a hash, the hash would effectively become the password. Signing up also logs the user in: the server sets the cookie (for the dashboard) and returns the token in the body (for the extension). Emails are trimmed and lowercased before saving, so `Maia@x.com` and `maia@x.com` are one account.
 
 ```
 Input:   { "email": "string", "password": "string" }
 Output:  201 Created
          Sets httpOnly cookie
          { "token": "string", "user": { "id": number, "email": "string" } }
-Errors:  400  missing or invalid email/password
+Errors:  400  missing or invalid: email must contain "@", password must be a string of at least 8 characters
          409  email already registered
          500  unexpected server error
 ```
@@ -120,7 +134,7 @@ Errors:  400  missing or invalid email/password
 ### 2. Log in: `POST /api/auth/login`
 
 - **Auth:** Public
-- **Notes:** `POST`, not `GET`, so the password never goes in the URL. `200`, not `201`, because nothing new is saved. The `401` message is the same whether the email or the password is wrong, so attackers can't find out which emails have accounts (user enumeration).
+- **Notes:** `POST`, not `GET`, so the password never goes in the URL. `200`, not `201`, because nothing new is saved. The `401` message is the same whether the email or the password is wrong, so attackers can't find out which emails have accounts (user enumeration). The email is trimmed and lowercased the same way as at sign up. Log in doesn't check the password rules, so a wrong-looking attempt gets the same vague `401`.
 
 ```
 Input:   { "email": "string", "password": "string" }
@@ -161,12 +175,14 @@ Errors:  401  not logged in
 ### 5. List my repos: `GET /api/repos`
 
 - **Auth:** Logged in
-- **Notes:** No user ID in the URL. The server gets the user from the cookie or token, so nobody can request someone else's repos by changing a number. `hasPet` tells the dashboard whether to show the pet or a "pick a character" screen.
+- **Notes:** No user ID in the URL. The server gets the user from the cookie or token, so nobody can request someone else's repos by changing a number. `hasPet` tells the dashboard whether to show the pet or a "pick a character" screen. `pet` gives the dashboard's repo cards what they need (name, character, calculated mood) without a second request per repo. It is `null` when the repo has no pet yet. The extension uses this list to decide which pet to show on which GitHub repo.
 
 ```
 Input:   none
 Output:  200 OK
-         [ { "id": number, "fullName": "string", "hasPet": boolean, "createdAt": "string" } ]
+         [ { "id": number, "fullName": "string", "hasPet": boolean,
+             "pet": { "name": "string", "character": "string", "mood": "happy" | "normal" | "sick" } | null,
+             "createdAt": "string" } ]
 Errors:  401  not logged in
          500  unexpected server error
 ```
@@ -174,7 +190,7 @@ Errors:  401  not logged in
 ### 6. Connect a repo: `POST /api/repos`
 
 - **Auth:** Logged in
-- **Notes:** Same URL as #5. The method tells them apart. **Different users can connect the same GitHub repo** (e.g. the whole team on one project repo). Each connection gets its own row, its own secret, and its own webhook URL. The **same user** connecting the same repo twice is a `409`. The secret is **only shown here, once**, and never sent again by any other route. The server builds `webhookUrl` from the `PUBLIC_URL` environment variable (the server's public address).
+- **Notes:** Same URL as #5. The method tells them apart. **Different users can connect the same GitHub repo** (e.g. the whole team on one project repo). Each connection gets its own row, its own secret, and its own webhook URL. The **same user** connecting the same repo twice is a `409`. The secret is returned here and by #13 (new webhook secret), and never by any `GET` route. The server builds `webhookUrl` from the `PUBLIC_URL` environment variable (the server's public address).
 
 ```
 Input:   { "fullName": "owner/repo-name" }
@@ -274,18 +290,68 @@ Errors:  401  signature missing or invalid
 Duplicates: same X-GitHub-Delivery seen before → 200, ignored (not an error)
 ```
 
+### 11. Update the pet: `PATCH /api/repos/:repoId/pet`
+
+- **Auth:** Logged in + ownership check
+- **Notes:** `PATCH` because it changes part of something that exists. Send `name`, `character`, or both. Updates `updated_at`. Returns the same pet shape as #8.
+
+```
+Input:   { "name"?: "string", "character"?: "kitsune" }   (at least one)
+Output:  200 OK
+         { "id": number, "name": "string", "character": "string", "mood": "string",
+           "createdAt": "string", "updatedAt": "string" }
+Errors:  400  nothing to update, empty name, or character isn't one we support
+         401  not logged in
+         404  repo not found (or not yours), or no pet yet
+         500  unexpected server error
+```
+
+### 12. Disconnect a repo: `DELETE /api/repos/:repoId`
+
+- **Auth:** Logged in + ownership check
+- **Notes:** Removes the repo connection. Its pet and events are deleted with it (the schema's `ON DELETE CASCADE`). This is also how a pet gets deleted. The dashboard asks the user to confirm first. The webhook in GitHub keeps existing until the user removes it there; its deliveries will get a `404`.
+
+```
+Input:   none
+Output:  200 OK
+         { "deleted": true }
+Errors:  401  not logged in
+         404  repo not found (or not yours)
+         500  unexpected server error
+```
+
+### 13. New webhook secret: `POST /api/repos/:repoId/webhook-secret`
+
+- **Auth:** Logged in + ownership check
+- **Notes:** Replaces the repo's secret with a new random one and returns it. This is the fix for "I lost my secret": the webhook setup page calls it, so the page can be reopened anytime. `POST`, not `GET`, because it changes data. After calling it, the user must update the secret in GitHub's webhook settings, or deliveries will fail the signature check.
+
+```
+Input:   none
+Output:  200 OK
+         { "webhookUrl": "<PUBLIC_URL>/api/webhooks/github/<id>", "webhookSecret": "string" }
+Errors:  401  not logged in
+         404  repo not found (or not yours)
+         500  unexpected server error
+```
+
 ## Decisions log
 
-| Decision                   | Choice                                                   | Why                                                                                |
-| -------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Dashboard token storage    | httpOnly cookie                                          | Safe from XSS; common real-world pattern                                           |
-| Extension token storage    | `chrome.storage` + Bearer header                         | Extensions can't easily share the dashboard's cookie                               |
-| Dashboard hosting          | Served by Express                                        | Same domain, so the cookie stays first-party                                       |
-| Same repo, different users | Allowed; each gets its own webhook URL `/github/:repoId` | The team can all use the project repo; no guessing which row                       |
-| Someone else's repo        | `404`                                                    | Hides which repo IDs exist                                                         |
-| Repo with no pet           | `404` "No pet yet"                                       | The pet doesn't exist yet                                                          |
-| Error format               | `{ "error": "message" }`                                 | Every client handles errors the same way                                           |
-| Log out                    | Public, always `200`                                     | Logging out twice is harmless, so it can never get stuck                           |
-| Webhook secrets            | One per connected repo, stored in the database           | No global webhook secret env var                                                   |
-| Webhook URL                | Built from `PUBLIC_URL` env var                          | The server needs its own public address to build the URL                           |
-| Event details              | `details` JSONB column on `events`                       | Log and speech bubbles can name the PR; new event types fit without a table change |
+| Decision                   | Choice                                                     | Why                                                                                |
+| -------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Dashboard token storage    | httpOnly cookie                                            | Safe from XSS; common real-world pattern                                           |
+| Extension token storage    | `chrome.storage` + Bearer header                           | Extensions can't easily share the dashboard's cookie                               |
+| Dashboard hosting          | Served by Express                                          | Same domain, so the cookie stays first-party                                       |
+| Same repo, different users | Allowed; each gets its own webhook URL `/github/:repoId`   | The team can all use the project repo; no guessing which row                       |
+| Someone else's repo        | `404`                                                      | Hides which repo IDs exist                                                         |
+| Repo with no pet           | `404` "No pet yet"                                         | The pet doesn't exist yet                                                          |
+| Error format               | `{ "error": "message" }`                                   | Every client handles errors the same way                                           |
+| Log out                    | Public, always `200`                                       | Logging out twice is harmless, so it can never get stuck                           |
+| Webhook secrets            | One per connected repo, stored in the database             | No global webhook secret env var                                                   |
+| Webhook URL                | Built from `PUBLIC_URL` env var                            | The server needs its own public address to build the URL                           |
+| Event details              | `details` JSONB column on `events`                         | Log and speech bubbles can name the PR; new event types fit without a table change |
+| Lost webhook secret        | "New webhook secret" route (#13)                           | Webhook setup can be reopened anytime; a refresh is never a dead end               |
+| CRUD                       | Full CRUD on repos and pets; events are create + read only | Events are a record of what happened, so they aren't edited                        |
+| Emails                     | Trimmed and lowercased                                     | One account per email, whatever the capitalization                                 |
+| Password rule              | At least 8 characters, checked at sign up only             | Log in stays vague on purpose                                                      |
+| Unexpected errors          | Global handler returns `{ "error": ... }` with `500`       | Clients always get JSON, and no stack traces leak                                  |
+| User flow                  | See `docs/USER-FLOW.md`                                    | Dashboard at `/` is the hub; setup is Connect → Pick character → Webhook           |
