@@ -228,6 +228,12 @@ const maybeStroll = async () => {
   if (shouldStroll(current.mood, lastStrollAt, Date.now())) startStroll();
 };
 
+// Puts the widget on the page. It goes on <html>, not <body>: when you click around,
+// GitHub swaps in a whole new <body>, which would take the fox away with it.
+const attach = () => {
+  if (!host.isConnected) document.documentElement.append(host);
+};
+
 // Asks the background worker what to show for the repo this page belongs to.
 const refresh = async () => {
   const fullName = repoFromPath(location.pathname);
@@ -261,7 +267,7 @@ const start = async () => {
   const stored = await chrome.storage.local.get(MINIMIZED_KEY);
   minimized = stored[MINIMIZED_KEY] === true;
 
-  document.body.append(host);
+  attach();
   refresh();
 
   // Keep the mood fresh.
@@ -273,6 +279,8 @@ const start = async () => {
   // GitHub swaps pages without a full reload, so watch for the address changing.
   let lastPath = location.pathname;
   setInterval(() => {
+    // Belt and braces: if anything ever removes the widget, put it back.
+    attach();
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
       cardOpen = false;
