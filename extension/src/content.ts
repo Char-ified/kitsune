@@ -279,6 +279,8 @@ const start = async () => {
   // GitHub swaps pages without a full reload, so watch for the address changing.
   let lastPath = location.pathname;
   setInterval(() => {
+    // Belt and braces: if anything ever removes the widget, put it back.
+    attach();
     if (location.pathname !== lastPath) {
       lastPath = location.pathname;
       cardOpen = false;
