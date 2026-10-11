@@ -2,9 +2,10 @@
 // The popup sends it a message, it does the work, and it sends back the result.
 // Chrome starts and stops this script whenever it likes, so nothing is kept in variables:
 // the token lives in chrome.storage.
-import type { User } from '@kitsune/shared';
+import type { Repo, User } from '@kitsune/shared';
 import { SERVER_URL } from './config';
-import type { ExtensionRequest, SessionResponse } from './messages';
+import type { ExtensionRequest, PetResponse, SessionResponse } from './messages';
+import { findRepo } from './repo';
 
 const TOKEN_KEY = 'token';
 
@@ -58,7 +59,32 @@ const logout = async (): Promise<SessionResponse> => {
   return { user: null };
 };
 
-const handle = (request: ExtensionRequest): Promise<SessionResponse> => {
+// Looks up the pet for one GitHub repo, for the widget on that repo's pages.
+// GET /api/repos already includes each repo's pet and mood, so one request is enough.
+const getPet = async (fullName: string): Promise<PetResponse> => {
+  const token = await getToken();
+  if (!token) return { state: 'loggedOut' };
+
+  const res = await fetch(`${SERVER_URL}/api/repos`, {
+    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'omit',
+  });
+
+  if (res.status === 401) {
+    await chrome.storage.local.remove(TOKEN_KEY);
+    return { state: 'loggedOut' };
+  }
+  if (!res.ok) return { state: 'error' };
+
+  const repos: Repo[] = await res.json();
+  const repo = findRepo(repos, fullName);
+
+  if (!repo) return { state: 'notConnected' };
+  if (!repo.pet) return { state: 'noPet', repoId: repo.id };
+  return { state: 'pet', repoId: repo.id, name: repo.pet.name, mood: repo.pet.mood };
+};
+
+const handle = (request: ExtensionRequest): Promise<SessionResponse | PetResponse> => {
   switch (request.type) {
     case 'login':
       return login(request.email, request.password);
@@ -66,6 +92,8 @@ const handle = (request: ExtensionRequest): Promise<SessionResponse> => {
       return logout();
     case 'getSession':
       return getSession();
+    case 'getPet':
+      return getPet(request.fullName);
   }
 };
 
@@ -73,7 +101,13 @@ chrome.runtime.onMessage.addListener((request: ExtensionRequest, _sender, sendRe
   handle(request)
     .then(sendResponse)
     // fetch throws when the server can't be reached at all.
-    .catch(() => sendResponse({ user: null, error: 'Could not reach the server. Is it running?' }));
+    .catch(() =>
+      sendResponse(
+        request.type === 'getPet'
+          ? { state: 'error' }
+          : { user: null, error: 'Could not reach the server. Is it running?' },
+      ),
+    );
 
   // Returning true tells Chrome the answer is coming later, so it keeps the line open.
   return true;
