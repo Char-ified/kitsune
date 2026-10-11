@@ -1,15 +1,20 @@
-// Content script: runs on github.com pages and shows the pet roaming along the bottom. (CHA-22)
+// Content script: runs on github.com pages and shows the pet in the corner. It sits most
+// of the time and gets up for a walk now and then, or when its mood changes. (CHA-22)
 // It only draws. The background worker does the talking to our server.
 import type { Mood } from '@kitsune/shared';
 import { DASHBOARD_URL } from './config';
 import type { ExtensionRequest, PetResponse } from './messages';
 import { repoFromPath } from './repo';
+import { shouldStroll } from './stroll';
 import { WIDGET_CSS } from './widget.css';
 
 // How often to ask for a fresh mood, and how often to check whether the page changed.
 const REFRESH_MS = 30_000;
 const URL_CHECK_MS = 1_000;
+const STROLL_CHECK_MS = 5_000;
 const MINIMIZED_KEY = 'widgetMinimized';
+// When the last walk started. Kept in storage so opening a new page doesn't set off a walk.
+const LAST_STROLL_KEY = 'lastStrollAt';
 
 const TOTAL_SEGMENTS = 20;
 const FILLED_SEGMENTS: Record<Mood, number> = { happy: 20, normal: 10, sick: 4 };
@@ -28,8 +33,12 @@ shadow.adoptedStyleSheets = [styles];
 let current: PetResponse = { state: 'notConnected' };
 let minimized = false;
 let cardOpen = false;
+let walking = false;
 // What was last drawn, so a refresh with nothing new doesn't restart the fox's walk.
 let drawn = '';
+
+// People who ask their computer for less motion get a fox that never walks.
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 // Small helper for building elements without innerHTML. The pet's name is typed by
 // a user, so it must only ever be inserted as text, never as HTML.
@@ -68,6 +77,7 @@ const row = (...items: Node[]) => {
 const setMinimized = (value: boolean) => {
   minimized = value;
   cardOpen = false;
+  walking = false;
   chrome.storage.local.set({ [MINIMIZED_KEY]: value });
   render();
 };
@@ -88,14 +98,14 @@ const meter = (mood: Mood) => {
   return bar;
 };
 
-// What each state looks like: which sprite, whether the fox walks, and what its card says.
+// What each state looks like: which sprite, its CSS classes, and what its card says.
 const describe = (pet: PetResponse): { file: string; classes: string; card: Node[] } | null => {
   switch (pet.state) {
     case 'pet':
       return {
-        // A sick fox sits still. Otherwise it walks, and a happy one walks faster.
-        file: pet.mood === 'sick' ? 'kitsune-sick.png' : 'kitsune-walking.png',
-        classes: pet.mood === 'sick' ? 'sick' : `roaming ${pet.mood}`,
+        // Sitting shows the mood's own sprite. Walking swaps to the side-view sprite.
+        file: walking ? 'kitsune-walking.png' : `kitsune-${pet.mood}.png`,
+        classes: walking ? `roaming ${pet.mood}` : pet.mood,
         card: [
           row(el('span', 'name', pet.name), el('span', `badge ${pet.mood}`, pet.mood)),
           meter(pet.mood),
@@ -128,13 +138,13 @@ const describe = (pet: PetResponse): { file: string; classes: string; card: Node
 
 // Redraws the widget, but only when something it depends on has changed.
 const render = () => {
-  const next = JSON.stringify([current, minimized, cardOpen]);
+  const next = JSON.stringify([current, minimized, walking, cardOpen]);
   if (next === drawn) return;
   // Opening or closing the card must not send a walking fox back to the start,
   // so that case only swaps the card and leaves the fox element alone.
   const onlyCardChanged =
     drawn !== '' &&
-    JSON.stringify([current, minimized]) === JSON.stringify(JSON.parse(drawn).slice(0, 2));
+    JSON.stringify([current, minimized, walking]) === JSON.stringify(JSON.parse(drawn).slice(0, 3));
   drawn = next;
 
   const look = describe(current);
@@ -185,8 +195,37 @@ const render = () => {
     render();
   });
 
+  // When the walk is over the fox sits back down.
+  walker.addEventListener('animationend', (event) => {
+    if (event.animationName === 'roam') {
+      walking = false;
+      render();
+    }
+  });
+
   walker.append(foxButton);
   shadow.append(walker);
+};
+
+// Sends the fox on one walk across the page and back.
+const startStroll = () => {
+  if (walking || minimized || reducedMotion.matches) return;
+  if (current.state !== 'pet' || current.mood === 'sick') return;
+
+  walking = true;
+  chrome.storage.local.set({ [LAST_STROLL_KEY]: Date.now() });
+  render();
+};
+
+// Runs every few seconds: has the fox rested long enough to go for another walk?
+const maybeStroll = async () => {
+  if (current.state !== 'pet' || cardOpen) return;
+
+  const stored = await chrome.storage.local.get(LAST_STROLL_KEY);
+  const last: unknown = stored[LAST_STROLL_KEY];
+  const lastStrollAt = typeof last === 'number' ? last : null;
+
+  if (shouldStroll(current.mood, lastStrollAt, Date.now())) startStroll();
 };
 
 // Asks the background worker what to show for the repo this page belongs to.
@@ -195,6 +234,7 @@ const refresh = async () => {
 
   if (!fullName) {
     current = { state: 'notConnected' };
+    walking = false;
     render();
     return;
   }
@@ -203,8 +243,18 @@ const refresh = async () => {
   const response: PetResponse = await chrome.runtime.sendMessage(request);
 
   // If the server couldn't be reached, keep showing the last thing we knew.
-  if (response.state !== 'error') current = response;
+  if (response.state === 'error') return;
+
+  const moodBefore = current.state === 'pet' ? current.mood : null;
+  const firstLook = current.state !== 'pet';
+  current = response;
+
+  // A fox that just got sick stops where it is and sits down.
+  if (current.state !== 'pet' || current.mood === 'sick') walking = false;
   render();
+
+  // Something happened in the repo: the mood changed, so get up and take a lap.
+  if (current.state === 'pet' && !firstLook && current.mood !== moodBefore) startStroll();
 };
 
 const start = async () => {
@@ -216,6 +266,9 @@ const start = async () => {
 
   // Keep the mood fresh.
   setInterval(refresh, REFRESH_MS);
+
+  // Every so often, see whether it's time for a walk.
+  setInterval(maybeStroll, STROLL_CHECK_MS);
 
   // GitHub swaps pages without a full reload, so watch for the address changing.
   let lastPath = location.pathname;
