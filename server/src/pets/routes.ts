@@ -2,8 +2,9 @@
 // requireAuth and requireRepoOwner run before every route here (see app.ts),
 // so by now we know who the user is and that res.locals.repo belongs to them.
 import { Router } from 'express';
-import type { Character, Pet } from '@kitsune/shared';
+import type { Character, Mood, Pet } from '@kitsune/shared';
 import pool from '../db.js';
+import { getMoodForRepo } from '../moodQueries.js';
 
 const petRouter = Router();
 
@@ -21,12 +22,12 @@ type PetRow = {
 const PET_COLUMNS = 'id, name, character, created_at, updated_at';
 
 // Turns a database row (snake_case) into the contract's pet shape (camelCase).
-const toPet = (row: PetRow): Pet => ({
+const toPet = (row: PetRow, mood: Mood): Pet => ({
   id: row.id,
   name: row.name,
   character: row.character,
-  // Mood is calculated, never stored. Every pet is "normal" until the mood logic lands (CHA-17).
-  mood: 'normal',
+  // Mood is calculated from the repo's events, never stored (see mood.ts).
+  mood,
   createdAt: row.created_at.toISOString(),
   updatedAt: row.updated_at.toISOString(),
 });
@@ -62,7 +63,7 @@ petRouter.post('/', async (req, res) => {
       `INSERT INTO pets (repo_id, name, character) VALUES ($1, $2, $3) RETURNING ${PET_COLUMNS}`,
       [res.locals.repo.id, name, character],
     );
-    res.status(201).json(toPet(result.rows[0]));
+    res.status(201).json(toPet(result.rows[0], await getMoodForRepo(res.locals.repo.id)));
   } catch (err) {
     // 23505 = unique violation. pets.repo_id is UNIQUE, so this repo already has a pet.
     if ((err as { code?: string }).code === '23505') {
@@ -85,7 +86,7 @@ petRouter.get('/', async (_req, res) => {
     return;
   }
 
-  res.json(toPet(row));
+  res.json(toPet(row, await getMoodForRepo(res.locals.repo.id)));
 });
 
 // 11. Update the pet: a new name, a new character, or both
@@ -123,7 +124,7 @@ petRouter.patch('/', async (req, res) => {
     return;
   }
 
-  res.json(toPet(row));
+  res.json(toPet(row, await getMoodForRepo(res.locals.repo.id)));
 });
 
 export default petRouter;

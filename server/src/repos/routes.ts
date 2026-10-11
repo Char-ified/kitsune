@@ -5,6 +5,7 @@ import type { Character, ConnectedRepo, Repo, WebhookDetails } from '@kitsune/sh
 import { requireAuth } from '../auth/middleware.js';
 import { requireRepoOwner } from '../auth/ownership.js';
 import pool from '../db.js';
+import { getMoodsForRepos } from '../moodQueries.js';
 
 const reposRouter = express.Router();
 
@@ -38,6 +39,9 @@ reposRouter.get('/', requireAuth, async (req, res) => {
     [res.locals.userId],
   );
 
+  // Mood is calculated from each repo's events, never stored (see mood.ts).
+  const moods = await getMoodsForRepos(result.rows.map((row) => row.id));
+
   const repos: Repo[] = result.rows.map((row) => ({
     id: row.id,
     fullName: row.full_name,
@@ -45,8 +49,11 @@ reposRouter.get('/', requireAuth, async (req, res) => {
     pet:
       row.pet_name === null || row.pet_character === null
         ? null
-        : // Mood is calculated, never stored. Every pet is "normal" until the mood logic lands (CHA-17).
-          { name: row.pet_name, character: row.pet_character, mood: 'normal' },
+        : {
+            name: row.pet_name,
+            character: row.pet_character,
+            mood: moods.get(row.id) ?? 'normal',
+          },
     createdAt: row.created_at.toISOString(),
   }));
 
