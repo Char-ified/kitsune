@@ -3,7 +3,10 @@
 import { DASHBOARD_URL } from './config';
 import type { ExtensionRequest, SessionResponse } from './messages';
 
-const send = (request: ExtensionRequest): Promise<SessionResponse> =>
+// The popup only sends session messages (never getPet), so the answer is always a SessionResponse.
+type SessionRequest = Exclude<ExtensionRequest, { type: 'getPet' }>;
+
+const send = (request: SessionRequest): Promise<SessionResponse> =>
   chrome.runtime.sendMessage(request);
 
 // Finds an element by id, and fails loudly if popup.html and this file get out of sync.

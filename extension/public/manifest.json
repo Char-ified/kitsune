@@ -16,5 +16,11 @@
   "background": {
     "service_worker": "background.js"
   },
-  "host_permissions": ["http://localhost:3000/*"]
+  "host_permissions": ["http://localhost:3000/*"],
+  "web_accessible_resources": [
+    {
+      "resources": ["kitsune-*.png"],
+      "matches": ["https://github.com/*"]
+    }
+  ]
 }
