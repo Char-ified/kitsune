@@ -177,4 +177,13 @@ describe('who can reach the pet routes', () => {
 
     expect(res.status).toBe(404);
   });
+
+  it('returns 404, not a server error, for a repo id too big for the database', async () => {
+    const { agent } = await setUp();
+
+    const res = await agent.get('/api/repos/99999999999/pet');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ error: 'Repo not found' });
+  });
 });

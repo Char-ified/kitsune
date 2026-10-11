@@ -1,6 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
 import pool from '../db.js';
 
+// repos.id is a Postgres INTEGER, so anything larger can't be a real ID. Without this
+// check the database rejects the query and the user gets a 500 instead of a 404.
+const MAX_REPO_ID = 2147483647;
+
 // Runs after requireAuth on any route with :repoId. Confirms the repo belongs to
 // the logged-in user and saves it in res.locals.repo for the route to use
 // "Not yours" gets the same 404 as "doesnt exist" so nobody can find out
@@ -8,7 +12,7 @@ import pool from '../db.js';
 export const requireRepoOwner = async (req: Request, res: Response, next: NextFunction) => {
   const repoId = Number(req.params.repoId);
 
-  if (!Number.isInteger(repoId) || repoId <= 0) {
+  if (!Number.isInteger(repoId) || repoId <= 0 || repoId > MAX_REPO_ID) {
     res.status(404).json({ error: 'Repo not found' });
     return;
   }
