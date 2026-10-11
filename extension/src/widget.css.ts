@@ -32,33 +32,34 @@ export const WIDGET_CSS = `
   pointer-events: auto;
 }
 
-/* Roaming: slide from the left side to the right side and back, forever.
-   The ends are kept away from the edges so the card always fits on screen. */
+/* A walk: from the corner where the fox sits, across the page, and back again. Once.
+   The far end is kept away from the edge so the card always fits on screen. */
 .walker.roaming {
-  animation: roam var(--lap, 50s) linear infinite;
+  animation: roam var(--lap, 28s) linear 1;
 }
 
 @keyframes roam {
   0%,
   100% {
-    left: 64px;
+    left: calc(100% - 128px);
   }
   50% {
-    left: calc(100% - 128px);
+    left: 64px;
   }
 }
 
-/* The fox turns around at each end. Same length as roam, so they stay in step. */
+/* The walking sprite faces right, so it is flipped for the trip out (heading left)
+   and turned back for the trip home. Same length as roam, so they stay in step. */
 .walker.roaming .facing {
-  animation: face var(--lap, 50s) step-end infinite;
+  animation: face var(--lap, 28s) step-end 1;
 }
 
 @keyframes face {
   0% {
-    transform: scaleX(1);
+    transform: scaleX(-1);
   }
   50% {
-    transform: scaleX(-1);
+    transform: scaleX(1);
   }
 }
 
@@ -79,7 +80,7 @@ export const WIDGET_CSS = `
 
 /* A happy fox moves faster. */
 .walker.happy {
-  --lap: 32s;
+  --lap: 20s;
   --hop: 0.45s;
 }
 
