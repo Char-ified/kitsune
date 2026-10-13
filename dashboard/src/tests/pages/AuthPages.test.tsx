@@ -72,6 +72,14 @@ describe('the login guard', () => {
     expect(screen.queryByText('Dashboard page')).not.toBeInTheDocument();
   });
 
+  it('treats a server it cannot reach as logged out', async () => {
+    vi.mocked(authApi.me).mockRejectedValue(new TypeError('Failed to fetch'));
+    renderApp('/');
+
+    expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument();
+    expect(screen.queryByText('Dashboard page')).not.toBeInTheDocument();
+  });
+
   it('sends someone who is already logged in away from the login page', async () => {
     vi.mocked(authApi.me).mockResolvedValue({ user: fox });
     renderApp('/login');
@@ -112,6 +120,26 @@ describe('LoginPage', () => {
 
     expect(await screen.findByText('Could not reach the server. Try again.')).toBeInTheDocument();
   });
+
+  it('lets the user try again after an error', async () => {
+    vi.mocked(authApi.login)
+      .mockRejectedValueOnce(new ApiError(401, 'Invalid email or password'))
+      .mockResolvedValueOnce({ user: fox });
+    renderApp('/login');
+    await fillIn('fox@example.com', 'hunter2!!');
+    await userEvent.click(screen.getByRole('button', { name: 'Log in' }));
+    await screen.findByText('Invalid email or password');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Log in' }));
+
+    expect(await screen.findByText('Dashboard page')).toBeInTheDocument();
+  });
+
+  it('links to the sign up page', async () => {
+    renderApp('/login');
+
+    expect(await screen.findByRole('link', { name: 'Sign up' })).toHaveAttribute('href', '/signup');
+  });
 });
 
 describe('SignupPage', () => {
@@ -126,13 +154,29 @@ describe('SignupPage', () => {
     expect(await screen.findByText('Dashboard page')).toBeInTheDocument();
   });
 
-  it("shows the server's message when the email is already registered", async () => {
-    vi.mocked(authApi.signup).mockRejectedValue(new ApiError(409, 'Email already registered'));
+  it.each([
+    [409, 'Email already registered'],
+    [400, 'Enter a valid email and a password of at least 8 characters'],
+  ])("shows the server's message for a %i, and stays on the page", async (status, message) => {
+    vi.mocked(authApi.signup).mockRejectedValue(new ApiError(status, message));
     renderApp('/signup');
 
     await fillIn('fox@example.com', 'hunter2!!');
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
-    expect(await screen.findByText('Email already registered')).toBeInTheDocument();
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(screen.queryByText('Dashboard page')).not.toBeInTheDocument();
+  });
+
+  it('tells the user the password rule before they type', async () => {
+    renderApp('/signup');
+
+    expect(await screen.findByLabelText('Password (at least 8 characters)')).toBeInTheDocument();
+  });
+
+  it('links to the log in page', async () => {
+    renderApp('/signup');
+
+    expect(await screen.findByRole('link', { name: 'Log in' })).toHaveAttribute('href', '/login');
   });
 });
