@@ -60,6 +60,10 @@ const events = new Map<number, RepoEvent[]>([
   ],
 ]);
 
+// The same rule as the real server: 1 to 30 characters once trimmed.
+const NAME_ERROR = 'Give your pet a name (up to 30 characters)';
+const isValidName = (name: string) => name.trim().length > 0 && name.trim().length <= 30;
+
 const findRepo = (repoId: number): FakeRepo => {
   const repo = repos.find((item) => item.id === repoId);
   if (!repo) throw new ApiError(404, 'Repo not found');
@@ -126,7 +130,7 @@ export const mockApi: Api = {
   createPet: async (repoId, input) => {
     await pause();
     findRepo(repoId);
-    if (!input.name.trim()) throw new ApiError(400, 'Give your pet a name (up to 30 characters)');
+    if (!isValidName(input.name)) throw new ApiError(400, NAME_ERROR);
     if (pets.has(repoId)) throw new ApiError(409, 'This repo already has a pet');
     const pet: Pet = {
       id: nextId++,
@@ -145,8 +149,8 @@ export const mockApi: Api = {
     findRepo(repoId);
     const pet = pets.get(repoId);
     if (!pet) throw new ApiError(404, 'No pet yet');
-    if (input.name !== undefined && !input.name.trim()) {
-      throw new ApiError(400, 'Give your pet a name (up to 30 characters)');
+    if (input.name !== undefined && !isValidName(input.name)) {
+      throw new ApiError(400, NAME_ERROR);
     }
     const updated: Pet = {
       ...pet,

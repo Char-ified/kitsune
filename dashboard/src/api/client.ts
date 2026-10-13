@@ -4,6 +4,7 @@ import type {
   Pet,
   Repo,
   RepoEvent,
+  User,
   WebhookDetails,
 } from '@kitsune/shared';
 
@@ -33,6 +34,28 @@ const request = async <T>(path: string, options: RequestInit = {}): Promise<T> =
   }
 
   return data as T;
+};
+
+// The login routes (docs/API.md routes 1 to 4). These always talk to the real server,
+// even when the rest of the dashboard is running on the fake API. The login cookie is
+// httpOnly, so it is set and cleared by the server and never touched here.
+export const authApi = {
+  signup: (email: string, password: string) =>
+    request<{ user: User }>('/api/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+
+  login: (email: string, password: string) =>
+    request<{ user: User }>('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    }),
+
+  logout: () => request<{ loggedOut: true }>('/api/auth/logout', { method: 'POST' }),
+
+  // Who is logged in? Throws an ApiError with status 401 when nobody is.
+  me: () => request<{ user: User }>('/api/auth/me'),
 };
 
 type PetInput = { name: string; character: Character };

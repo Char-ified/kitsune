@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
-import { useAuth, type User } from '../auth/AuthContext';
+import { ApiError, authApi } from '../api';
+import { useAuth } from '../auth/AuthContext';
 import { AuthShell } from '../components/AuthShell';
 import { Button } from '../components/Button';
 import { Panel } from '../components/Panel';
@@ -23,24 +24,14 @@ export const SignupPage = () => {
     setSubmitting(true);
 
     try {
-      // Difference 1: the signup route
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data: { user?: User; error?: string } = await res.json();
-
-      if (!res.ok || !data.user) {
-        setError(data.error ?? 'Something went wrong. Try again.');
-        return;
-      }
+      const { user } = await authApi.signup(email, password);
 
       // Signing up also logs you in (see docs/API.md, route 1).
-      setUser(data.user);
+      setUser(user);
       navigate('/');
-    } catch {
-      setError('Could not reach the server. Try again.');
+    } catch (err) {
+      // An ApiError carries the server's own message (wrong password, email already used).
+      setError(err instanceof ApiError ? err.message : 'Could not reach the server. Try again.');
     } finally {
       setSubmitting(false);
     }
