@@ -1,6 +1,6 @@
 // The messages the popup and the content script can send to the background worker.
 // Sharing these types means TypeScript catches a misspelled message on either side.
-import type { Mood, User } from '@kitsune/shared';
+import type { Mood, RepoEvent, User } from '@kitsune/shared';
 
 export type ExtensionRequest =
   | { type: 'getSession' }
@@ -17,6 +17,7 @@ export type PetResponse =
   // The user hasn't connected this repo, so there is nothing to show.
   | { state: 'notConnected' }
   | { state: 'noPet'; repoId: number }
-  | { state: 'pet'; repoId: number; name: string; mood: Mood }
+  // `events` is the latest few, newest first. Empty if there are none (or none can be read).
+  | { state: 'pet'; repoId: number; name: string; mood: Mood; events: RepoEvent[] }
   // The server couldn't be reached. The widget keeps showing what it had.
   | { state: 'error' };
