@@ -79,9 +79,24 @@ describe('PetViewPage', () => {
     expect(await screen.findByRole('heading', { name: 'Kitsu' })).toBeInTheDocument();
     expect(screen.getByText('Your guardian is thriving.')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Mood: happy' })).toBeInTheDocument();
-    expect(screen.getByText('PR merged')).toBeInTheDocument();
-    expect(screen.getByText('#12 add login route')).toBeInTheDocument();
+    expect(screen.getByText('PR #12 merged!')).toBeInTheDocument();
+    expect(screen.getByText('add login route')).toBeInTheDocument();
     expect(screen.getByText('Tests failed')).toBeInTheDocument();
+  });
+
+  it('folds back-to-back passing test runs into one row', async () => {
+    const passed = (id: number): RepoEvent => ({
+      id,
+      type: 'tests_passed',
+      details: { name: 'CI' },
+      createdAt: '2026-10-10T10:00:00.000Z',
+    });
+    vi.mocked(api.getEvents).mockResolvedValue([passed(5), passed(4), passed(3), events[0]]);
+    renderPage();
+
+    expect(await screen.findByText('Tests passed ×3')).toBeInTheDocument();
+    expect(screen.getAllByText(/^Tests passed/)).toHaveLength(1);
+    expect(screen.getByText('PR #12 merged!')).toBeInTheDocument();
   });
 
   it('says it is listening when there are no events yet', async () => {

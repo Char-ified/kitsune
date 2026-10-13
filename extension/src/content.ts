@@ -2,11 +2,11 @@
 // of the time, gets up for a walk now and then, and speaks up when something happens
 // in the repo. (CHA-22, CHA-45)
 // It only draws. The background worker does the talking to our server.
-import type { Mood, RepoEvent } from '@kitsune/shared';
+import { describeGroup, groupEvents, type Mood, type RepoEvent } from '@kitsune/shared';
 import { DASHBOARD_URL } from './config';
 import type { ExtensionRequest, PetResponse } from './messages';
 import { repoFromPath } from './repo';
-import { describeEvent, eventToAnnounce } from './speech';
+import { announcement, eventToAnnounce } from './speech';
 import { shouldStroll } from './stroll';
 import { WIDGET_CSS } from './widget.css';
 
@@ -115,12 +115,16 @@ const meter = (mood: Mood) => {
   return bar;
 };
 
-// The last few events, right in the card, so nobody has to open the dashboard for them.
+// How many rows of recent activity the fox's card shows.
+const LOG_ROWS = 3;
+
+// Recent activity, right in the card, so nobody has to open the dashboard for it.
+// Back-to-back passing test runs are folded into one row, so it isn't three lines of "passed".
 const miniLog = (events: RepoEvent[]) => {
   const list = el('ul', 'log');
-  for (const event of events) {
-    const line = describeEvent(event);
-    const item = el('li', `log-item ${event.type}`);
+  for (const group of groupEvents(events).slice(0, LOG_ROWS)) {
+    const line = describeGroup(group);
+    const item = el('li', `log-item ${group.latest.type}`);
     item.append(line.url ? link(line.text, line.url) : el('span', '', line.text));
     list.append(item);
   }
@@ -173,7 +177,7 @@ const updateSpeech = async () => {
 };
 
 const speechBubble = (event: RepoEvent) => {
-  const line = describeEvent(event);
+  const line = announcement(event);
   const bubble = el('div', `speech ${event.type}`);
   bubble.setAttribute('role', 'status');
   bubble.append(el('span', 'speech-text', line.text));

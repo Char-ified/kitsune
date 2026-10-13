@@ -44,3 +44,5 @@ export type WebhookDetails = { webhookUrl: string; webhookSecret: string };
 
 /** POST /api/repos. The only time the secret comes back besides a new-secret request. */
 export type ConnectedRepo = WebhookDetails & { id: number; fullName: string; createdAt: string };
+
+export * from './events.js';
