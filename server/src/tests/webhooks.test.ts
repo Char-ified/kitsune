@@ -308,6 +308,23 @@ describe('saving events', () => {
     expect(await savedEvents(repo.repoId)).toEqual([]);
   });
 
+  it('rejects an event we would save if GitHub sent no delivery ID', async () => {
+    const repo = await setUp();
+    const body = JSON.stringify(mergedPullRequest);
+
+    // Built by hand: the `deliver` helper always adds the X-GitHub-Delivery header.
+    const res = await request(app)
+      .post(repo.webhookUrl)
+      .set('Content-Type', 'application/json')
+      .set('X-GitHub-Event', 'pull_request')
+      .set('X-Hub-Signature-256', githubSignature(body, repo.secret))
+      .send(body);
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: 'Missing X-GitHub-Delivery header' });
+    expect(await savedEvents(repo.repoId)).toEqual([]);
+  });
+
   it('removes the events when the repo is disconnected', async () => {
     const repo = await setUp();
     await deliverEvent(repo, 'pull_request', mergedPullRequest);
