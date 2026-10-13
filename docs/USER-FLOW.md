@@ -73,13 +73,27 @@ Logged-out visitors to a "Logged in" page are sent to `/login`.
 
 ## In the extension
 
-- The pet shows **only** on a GitHub repo that is connected **and** has a pet. Different repos show their own pets.
-- On any other GitHub page: nothing, or the minimized bubble.
-- Logged out: a sleeping fox bubble, "Log in to wake me up."
-- Connected repo with no pet: "Pick a character in the dashboard."
+The fox on the GitHub page is the main way people use the product. Nobody should have to open the dashboard to find out what happened.
 
-## Stretch, in order
+**Where it shows**
 
-1. **Sleepy mood:** the fox falls asleep when a repo has been quiet for a while
-2. **Combined activity log** on the dashboard, across all repos
-3. **Roam mode:** the fox walks along the bottom of the page
+- **Only** on pages of a GitHub repo that is connected **and** has a pet. Different repos show their own pets.
+- Connected repo with no pet: the "?" fox, with a "Pick a character" link to the dashboard.
+- Logged out: a sleeping fox, "Log in to wake me up."
+- Any other GitHub page, or a repo that isn't connected: nothing at all.
+
+**What it does**
+
+- It **sits** in the corner most of the time, showing its mood.
+- Now and then it gets up, **walks across the page and back once**, and sits down again. A happy fox walks more often. A sick fox doesn't walk.
+- When the **mood changes**, it takes a walk right away.
+- When there is **news**, it says one short line with a "View" link to GitHub: a pull request merged, tests failed, or tests are passing again after a failure. It stays quiet about routine passing test runs. The bubble stays for 30 seconds (longer while the mouse rests on it) and each piece of news is told once.
+- **Click the fox** for its card: name, mood, the last three things that happened, and a link to the dashboard.
+- **Hide** shrinks it to a small face in the corner. News still shows above the face. Click the face to bring the fox back.
+
+**The popup** (the extension's icon): log in, log out, and "Open dashboard".
+
+## Stretch
+
+- **Done:** roam mode. The fox walks along the bottom of the page.
+- Not built: **sleepy mood** (the fox falls asleep when a repo has been quiet for a while), and a **combined activity log** on the dashboard across all repos.
