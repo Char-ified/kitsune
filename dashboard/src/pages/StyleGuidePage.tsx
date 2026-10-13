@@ -9,7 +9,7 @@ export const StyleGuidePage = () => {
     <div>
       <Panel>
         <h1>Kitsune Repo Pet</h1>
-        <p>Its only the begining!</p>
+        <p>Every shared component, in one place. For the team, not for users.</p>
         <Button variant="primary">Connect repository</Button>
         <Button variant="secondary">View repository</Button>
         <Button variant="primary" disabled>

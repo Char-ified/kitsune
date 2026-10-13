@@ -18,7 +18,9 @@ const app = express();
 // Webhook signatures are checked against the exact bytes GitHub sent, so these routes
 // keep the body raw. This must come before express.json(), which then skips the request
 // because its body has already been read.
-app.use('/api/webhooks', express.raw({ type: '*/*' }));
+// GitHub's deliveries can be bigger than Express's default limit of 100 KB
+// (a pull request with a long description, for example), so allow up to 1 MB.
+app.use('/api/webhooks', express.raw({ type: '*/*', limit: '1mb' }));
 app.use(express.json());
 app.use(cookieParser());
 
