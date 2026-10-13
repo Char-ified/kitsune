@@ -1,17 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import type { Mood, Repo } from '@kitsune/shared';
+import type { Repo } from '@kitsune/shared';
 import { api } from '../api';
 import { Button } from '../components/Button';
 import { MoodBadge } from '../components/MoodBadge';
 import { Panel } from '../components/Panel';
 import '../styles/DashboardPage.css';
-
-const SPRITES: Record<Mood, string> = {
-  happy: '/kitsune-happy.png',
-  normal: '/kitsune-normal.png',
-  sick: '/kitsune-sick.png',
-};
 
 // One card in the grid. It has two looks: a repo with a pet, and a repo still waiting for one
 const RepoCard = ({ repo }: { repo: Repo }) => {
@@ -37,7 +31,7 @@ const RepoCard = ({ repo }: { repo: Repo }) => {
   return (
     <li className="repo-card">
       <div className={`repo-card-stage repo-card-stage-${repo.pet.mood}`}>
-        <img className="repo-card-fox" src={SPRITES[repo.pet.mood]} alt="" />
+        <img className="repo-card-fox" src={`/kitsune-${repo.pet.mood}.png`} alt="" />
       </div>
       <div className="repo-card-heading">
         <h2 className="repo-card-name">{repo.pet.name}</h2>
