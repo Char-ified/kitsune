@@ -32,43 +32,44 @@ How people move through the app. Decided Oct 10. Routes refer to the dashboard (
 
 ## Pages
 
-| Page                | Path                            | Who can see it | What it's for                                                                  |
-| ------------------- | ------------------------------- | -------------- | ------------------------------------------------------------------------------ |
-| Log in              | `/login`                        | Logged out     | Log in. Logged-in users are sent to `/`.                                       |
-| Sign up             | `/signup`                       | Logged out     | Create an account (also logs you in).                                          |
-| Dashboard           | `/`                             | Logged in      | One card per connected repo, with its pet and mood. Empty state for new users. |
-| Connect a repo      | `/connect`                      | Logged in      | Enter `owner/repo-name`.                                                       |
-| Pick your character | `/repos/:repoId/pick-character` | Logged in      | Choose the kitsune and name it.                                                |
-| Webhook setup       | `/repos/:repoId/webhook`        | Logged in      | Copy the webhook URL and secret into GitHub. Can be reopened anytime.          |
-| Pet view            | `/repos/:repoId`                | Logged in      | The pet, its mood, and the event log for one repo.                             |
-| Style guide         | `/styleguide`                   | Anyone         | Shows every shared component. For the team.                                    |
-| Not found           | anything else                   | Anyone         | A way back to the dashboard.                                                   |
+| Page                | Path                            | Who can see it | What it's for                                                                                          |
+| ------------------- | ------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------ |
+| Log in              | `/login`                        | Logged out     | Log in. Logged-in users are sent to `/`.                                                               |
+| Sign up             | `/signup`                       | Logged out     | Create an account (also logs you in).                                                                  |
+| Dashboard           | `/`                             | Logged in      | One card per connected repo, with its pet and mood. Empty state for new users.                         |
+| Connect a repo      | `/connect`                      | Logged in      | Enter `owner/repo-name`.                                                                               |
+| Pick your character | `/repos/:repoId/pick-character` | Logged in      | Choose the kitsune and name it. A repo that already has a pet skips to its pet view.                   |
+| Webhook setup       | `/repos/:repoId/webhook`        | Logged in      | Generate a secret, then copy the webhook URL and secret into GitHub. Can be reopened anytime.          |
+| Pet view            | `/repos/:repoId`                | Logged in      | The pet, its mood, and the event log for one repo. A repo with no pet yet goes to pick your character. |
+| Style guide         | `/styleguide`                   | Anyone         | Shows every shared component. For the team.                                                            |
+| Not found           | anything else                   | Anyone         | A way back to the dashboard.                                                                           |
 
 Logged-out visitors to a "Logged in" page are sent to `/login`.
 
 ## Navigation: every way out of every page
 
-| Page                | Ways out                                                                                   |
-| ------------------- | ------------------------------------------------------------------------------------------ |
-| Header (every page) | Logo → `/` (or `/login` when logged out) · Log out → `/login`                              |
-| Log in / Sign up    | Link to each other · on success → `/`                                                      |
-| Dashboard           | "Connect a repo" → `/connect` · repo card → pet view, or pick a character if it has no pet |
-| Connect a repo      | Cancel → `/` · Submit → pick your character                                                |
-| Pick your character | Back → `/` · Create pet → webhook setup                                                    |
-| Webhook setup       | Done → pet view · Skip for now → pet view · Generate new secret (stays on the page)        |
-| Pet view            | Back to dashboard · Rename · Webhook setup · Disconnect repo (confirm first) → `/`         |
-| Not found           | Back to dashboard                                                                          |
+| Page                | Ways out                                                                                                                                             |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Header (every page) | Logo → `/` (or `/login` when logged out) · My repos → `/` · Log out → `/login`                                                                       |
+| Log in / Sign up    | Link to each other · on success → `/`                                                                                                                |
+| Dashboard           | "Connect a repo" → `/connect` · repo card: Open → pet view, Webhook setup → webhook setup, or pick a character if it has no pet                      |
+| Connect a repo      | Cancel → `/` · Submit → pick your character                                                                                                          |
+| Pick your character | Do this later → `/` · Create pet → webhook setup · already has a pet → straight to its pet view                                                      |
+| Webhook setup       | Done → pet view · Skip for now → pet view · Generate webhook secret / Generate new secret (stays on the page)                                        |
+| Pet view            | No back link of its own (the header has "My repos") · Rename · in the "Bound repository" panel: Webhook setup, Disconnect repo (confirm first) → `/` |
+| Not found           | Back to my repos → `/`                                                                                                                               |
 
 ## Decisions and why
 
-| Decision                                                                    | Why                                                                                                                     |
-| --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `/` is the dashboard, not a redirect into setup                             | People may want to look around before connecting anything                                                               |
-| Connect → Pick character → Webhook                                          | The fun part gets people invested before the fiddly part. The data model allows it: a pet only needs its repo to exist. |
-| Webhook setup can be reopened, with "Generate new secret"                   | A refresh or a lost secret is never a dead end                                                                          |
-| Several repos: one card each, each pet has its own event log                | Matches the data model (one pet per repo)                                                                               |
-| Disconnecting a repo also removes its pet and events                        | They can't exist without the repo. The user confirms first.                                                             |
-| Pet view before any events: normal mood + "Listening for your first signal" | A fresh setup shouldn't look broken                                                                                     |
+| Decision                                                                                              | Why                                                                                                                        |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `/` is the dashboard, not a redirect into setup                                                       | People may want to look around before connecting anything                                                                  |
+| Connect → Pick character → Webhook                                                                    | The fun part gets people invested before the fiddly part. The data model allows it: a pet only needs its repo to exist.    |
+| Webhook setup can be reopened, with "Generate new secret"                                             | A refresh or a lost secret is never a dead end                                                                             |
+| The webhook secret is only created when the user clicks "Generate webhook secret", never on page load | Each new secret replaces the old one. Creating one on every visit would silently break a webhook already set up in GitHub. |
+| Several repos: one card each, each pet has its own event log                                          | Matches the data model (one pet per repo)                                                                                  |
+| Disconnecting a repo also removes its pet and events                                                  | They can't exist without the repo. The user confirms first.                                                                |
+| Pet view before any events: normal mood + "Listening for your first signal"                           | A fresh setup shouldn't look broken                                                                                        |
 
 ## In the extension
 

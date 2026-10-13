@@ -42,7 +42,7 @@ There are three kinds of route:
 
 **The auth middleware checks the cookie first, then the header.** One middleware, two clients.
 
-**Cookie settings:** `httpOnly`, `secure` (HTTPS only, in production), `sameSite: 'lax'`.
+**Cookie settings:** `httpOnly`, `secure` (HTTPS only, in production), `sameSite: 'lax'`. The cookie and the token inside it both last 7 days.
 
 **Dashboard rule:** never save the token from a response body. The cookie handles it.
 
@@ -72,6 +72,17 @@ Every error response uses the same shape:
 ```json
 { "error": "Human-readable message" }
 ```
+
+The dashboard shows these messages to the user as-is, so the exact wording matters. The route details below quote each route's own messages. These ones are shared:
+
+| Status | Message                           | When                                                                   |
+| ------ | --------------------------------- | ---------------------------------------------------------------------- |
+| `400`  | `Request body must be valid JSON` | Any route that reads a JSON body, when the body isn't valid JSON       |
+| `401`  | `Not logged in`                   | A "Logged in" route with no cookie and no Bearer token                 |
+| `401`  | `Invalid or expired token`        | A "Logged in" route with a token that is fake, damaged, or over 7 days |
+| `404`  | `Repo not found`                  | Any route with `:repoId`, when the repo doesn't exist or isn't yours   |
+| `404`  | `Not found`                       | An `/api/...` URL that isn't a route                                   |
+| `500`  | `Unexpected server error`         | Anything unplanned. Details go to the server log, never to the client  |
 
 ## Routes
 
@@ -126,8 +137,9 @@ Input:   { "email": "string", "password": "string" }
 Output:  201 Created
          Sets httpOnly cookie
          { "token": "string", "user": { "id": number, "email": "string" } }
-Errors:  400  missing or invalid: email must contain "@", password must be a string of at least 8 characters
-         409  email already registered
+Errors:  400  "Enter a valid email and a password of at least 8 characters"
+              (email must contain "@", password must be a string of at least 8 characters)
+         409  "Email already registered"
          500  unexpected server error
 ```
 
@@ -141,7 +153,7 @@ Input:   { "email": "string", "password": "string" }
 Output:  200 OK
          Sets httpOnly cookie
          { "token": "string", "user": { "id": number, "email": "string" } }
-Errors:  400  missing email or password
+Errors:  400  "Email and password are required"
          401  "Invalid email or password"
          500  unexpected server error
 ```
@@ -168,14 +180,14 @@ Errors:  500  unexpected server error
 Input:   none
 Output:  200 OK
          { "user": { "id": number, "email": "string" } }
-Errors:  401  not logged in
+Errors:  401  "Not logged in" or "Invalid or expired token"
          500  unexpected server error
 ```
 
 ### 5. List my repos: `GET /api/repos`
 
 - **Auth:** Logged in
-- **Notes:** No user ID in the URL. The server gets the user from the cookie or token, so nobody can request someone else's repos by changing a number. `hasPet` tells the dashboard whether to show the pet or a "pick a character" screen. `pet` gives the dashboard's repo cards what they need (name, character, calculated mood) without a second request per repo. It is `null` when the repo has no pet yet. The extension uses this list to decide which pet to show on which GitHub repo.
+- **Notes:** No user ID in the URL. The server gets the user from the cookie or token, so nobody can request someone else's repos by changing a number. `hasPet` tells the dashboard whether to show the pet or a "pick a character" screen. `pet` gives the dashboard's repo cards what they need (name, character, calculated mood) without a second request per repo. It is `null` when the repo has no pet yet. `mood` follows the rules under [Mood](#mood). Repos come back oldest first. The extension uses this list to decide which pet to show on which GitHub repo.
 
 ```
 Input:   none
@@ -190,7 +202,7 @@ Errors:  401  not logged in
 ### 6. Connect a repo: `POST /api/repos`
 
 - **Auth:** Logged in
-- **Notes:** Same URL as #5. The method tells them apart. **Different users can connect the same GitHub repo** (e.g. the whole team on one project repo). Each connection gets its own row, its own secret, and its own webhook URL. The **same user** connecting the same repo twice is a `409`. The secret is returned here and by #13 (new webhook secret), and never by any `GET` route. The server builds `webhookUrl` from the `PUBLIC_URL` environment variable (the server's public address).
+- **Notes:** Same URL as #5. The method tells them apart. **Different users can connect the same GitHub repo** (e.g. the whole team on one project repo). Each connection gets its own row, its own secret, and its own webhook URL. The **same user** connecting the same repo twice is a `409`. The secret is returned here and by #13 (new webhook secret), and never by any `GET` route. The server builds `webhookUrl` from the `PUBLIC_URL` environment variable (the server's public address). `fullName` is trimmed, and each half may contain letters, numbers, `_`, `.`, and `-`.
 
 ```
 Input:   { "fullName": "owner/repo-name" }
@@ -198,33 +210,34 @@ Output:  201 Created
          { "id": number, "fullName": "string",
            "webhookUrl": "<PUBLIC_URL>/api/webhooks/github/<id>",
            "webhookSecret": "string", "createdAt": "string" }
-Errors:  400  missing fullName, or not in "owner/name" format
+Errors:  400  "Use the format owner/repo-name" (missing, not a string, or not owner/name)
          401  not logged in
-         409  you already connected this repo
+         409  "You already connected this repo"
          500  unexpected server error
 ```
 
 ### 7. Create the pet: `POST /api/repos/:repoId/pet`
 
 - **Auth:** Logged in + ownership check
-- **Notes:** The pet doesn't exist until the user picks a character, so this creates it. Returns the same pet shape as #8.
+- **Notes:** The pet doesn't exist until the user picks a character, so this creates it. Returns the same pet shape as #8. **Name rule:** the name is trimmed and must then be 1 to 30 characters.
 
 ```
 Input:   { "name": "string", "character": "kitsune" }
 Output:  201 Created
          { "id": number, "name": "string", "character": "string", "mood": "string",
            "createdAt": "string", "updatedAt": "string" }
-Errors:  400  missing name, or character isn't one we support
+Errors:  400  "Give your pet a name (up to 30 characters)" (missing, not a string, blank, or too long)
+         400  "Pick a character we support"
          401  not logged in
-         404  repo not found (or not yours)
-         409  this repo already has a pet
+         404  "Repo not found" (or not yours)
+         409  "This repo already has a pet"
          500  unexpected server error
 ```
 
 ### 8. Get pet + mood: `GET /api/repos/:repoId/pet`
 
 - **Auth:** Logged in + ownership check
-- **Notes:** Used by both the dashboard and the extension. `mood` is calculated from recent events, never stored. If the repo has no pet yet, this returns `404` with `"No pet yet"`, and the extension shows "Pick a character in the dashboard."
+- **Notes:** Used by both the dashboard and the extension. `mood` is calculated from recent events, never stored (see [Mood](#mood)). If the repo has no pet yet, this returns `404` with `"No pet yet"`, and the extension shows "Pick a character in the dashboard."
 - **Extension note:** a content script running on github.com is treated like part of GitHub's page, so the browser may block its requests to our server (CORS). Make the request from the extension's **background service worker** instead, with our server's URL in the manifest's `host_permissions`.
 
 ```
@@ -233,33 +246,33 @@ Output:  200 OK
          { "id": number, "name": "string", "character": "string", "mood": "happy" | "normal" | "sick",
            "createdAt": "string", "updatedAt": "string" }
 Errors:  401  not logged in
-         404  repo not found (or not yours), or no pet yet
+         404  "Repo not found" (or not yours), or "No pet yet"
          500  unexpected server error
 ```
 
 ### 9. Get event log: `GET /api/repos/:repoId/events`
 
 - **Auth:** Logged in + ownership check
-- **Notes:** Newest first. `limit` is an optional **query parameter** (part of the URL after `?`), e.g. `/api/repos/11/events?limit=20`. Default 20. `details` holds extra info about the event (see the table under route 10). It can be `{}` if there's nothing extra.
+- **Notes:** Newest first. `limit` is an optional **query parameter** (part of the URL after `?`), e.g. `/api/repos/11/events?limit=20`. Default 20, maximum 100: a larger number is treated as 100. A `limit` that isn't a positive whole number (`abc`, `0`, `2.5`) is ignored and the default is used, so this route has no `400`. `details` holds extra info about the event (see the table under route 10). It can be `{}` if there's nothing extra.
 
 ```
-Input:   optional query: ?limit=number
+Input:   optional query: ?limit=number (1 to 100, default 20)
 Output:  200 OK
          [ { "id": number, "type": "pr_merged" | "tests_passed" | "tests_failed",
              "details": object, "createdAt": "string" } ]
 
 Example: { "id": 7, "type": "pr_merged",
            "details": { "number": 12, "title": "add login route", "url": "https://github.com/..." },
-           "createdAt": "2026-10-09T10:42:00Z" }
+           "createdAt": "2026-10-09T10:42:00.000Z" }
 Errors:  401  not logged in
-         404  repo not found (or not yours)
+         404  "Repo not found" (or not yours)
          500  unexpected server error
 ```
 
 ### 10. GitHub event: `POST /api/webhooks/github/:repoId`
 
 - **Auth:** Signature (GitHub can't log in)
-- **Notes:** `POST` because each webhook creates a new event row. The `:repoId` in the URL says exactly which connection this is, so the server checks the signature against **that row's** secret. Check the signature against the **raw** request body, before Express parses the JSON. GitHub only needs a `2xx` back and marks the delivery failed after about 10 seconds, so respond quickly.
+- **Notes:** `POST` because each webhook creates a new event row. The `:repoId` in the URL says exactly which connection this is, so the server checks the signature against **that row's** secret. Check the signature against the **raw** request body, before Express parses the JSON. GitHub only needs a `2xx` back and marks the delivery failed after about 10 seconds, so respond quickly. The checks run in this order: repo exists (`404`), signature (`401`), body is JSON (`400`). The body is only read as JSON after the signature passes. The webhook must be set to Content type `application/json` in GitHub; the default (form-encoded) gets the `400`.
 - **Event mapping:** the server translates GitHub's events into ours.
 
 | GitHub sends                                                | We save                          |
@@ -284,8 +297,10 @@ Input:   Headers set by GitHub:
          Body: GitHub's JSON payload
 Output:  200 OK
          { "received": true }
-Errors:  401  signature missing or invalid
-         404  no connected repo with this ID
+Errors:  400  "Request body must be valid JSON. Set the webhook Content type to application/json"
+         400  "Missing X-GitHub-Delivery header" (only checked for events we save)
+         401  "Invalid signature" (missing or wrong)
+         404  "Repo not found" (no connected repo with this ID)
          500  unexpected server error
 Duplicates: same X-GitHub-Delivery seen before → 200, ignored (not an error)
 ```
@@ -293,16 +308,18 @@ Duplicates: same X-GitHub-Delivery seen before → 200, ignored (not an error)
 ### 11. Update the pet: `PATCH /api/repos/:repoId/pet`
 
 - **Auth:** Logged in + ownership check
-- **Notes:** `PATCH` because it changes part of something that exists. Send `name`, `character`, or both. Updates `updated_at`. Returns the same pet shape as #8.
+- **Notes:** `PATCH` because it changes part of something that exists. Send `name`, `character`, or both. Updates `updated_at`. Returns the same pet shape as #8. The name follows the same rule as #7: trimmed, then 1 to 30 characters.
 
 ```
 Input:   { "name"?: "string", "character"?: "kitsune" }   (at least one)
 Output:  200 OK
          { "id": number, "name": "string", "character": "string", "mood": "string",
            "createdAt": "string", "updatedAt": "string" }
-Errors:  400  nothing to update, empty name, or character isn't one we support
+Errors:  400  "Nothing to update" (neither name nor character sent)
+         400  "Give your pet a name (up to 30 characters)" (not a string, blank, or too long)
+         400  "Pick a character we support"
          401  not logged in
-         404  repo not found (or not yours), or no pet yet
+         404  "Repo not found" (or not yours), or "No pet yet"
          500  unexpected server error
 ```
 
@@ -316,7 +333,7 @@ Input:   none
 Output:  200 OK
          { "deleted": true }
 Errors:  401  not logged in
-         404  repo not found (or not yours)
+         404  "Repo not found" (or not yours)
          500  unexpected server error
 ```
 
@@ -330,9 +347,24 @@ Input:   none
 Output:  200 OK
          { "webhookUrl": "<PUBLIC_URL>/api/webhooks/github/<id>", "webhookSecret": "string" }
 Errors:  401  not logged in
-         404  repo not found (or not yours)
+         404  "Repo not found" (or not yours)
          500  unexpected server error
 ```
+
+## Mood
+
+`mood` appears in routes 5, 7, 8, and 11. It is worked out from the repo's events each time, never stored. The rules are checked in this order, and the first one that applies wins (`server/src/mood.ts`):
+
+| #   | If                                                 | Mood     |
+| --- | -------------------------------------------------- | -------- |
+| 1   | The repo has no events yet                         | `normal` |
+| 2   | The most recent test run failed                    | `sick`   |
+| 3   | A PR was merged or tests passed in the last 3 days | `happy`  |
+| 4   | Otherwise (the repo has been quiet)                | `normal` |
+
+- One failed run is enough for `sick`, and only a passing run cures it. A merged PR on top of failing tests doesn't.
+- The 3 days is the `HAPPY_WINDOW_DAYS` constant.
+- **Accepted limits for the MVP:** a failed run on any branch counts (we don't store the branch), and with several workflows the pet follows whichever finished last.
 
 ## Decisions log
 
@@ -355,3 +387,5 @@ Errors:  401  not logged in
 | Password rule              | At least 8 characters, checked at sign up only             | Log in stays vague on purpose                                                      |
 | Unexpected errors          | Global handler returns `{ "error": ... }` with `500`       | Clients always get JSON, and no stack traces leak                                  |
 | User flow                  | See `docs/USER-FLOW.md`                                    | Dashboard at `/` is the hub; setup is Connect → Pick character → Webhook           |
+| Mood rules                 | Sick while tests fail; happy for 3 days after good news    | Easy to explain and demo: break a test → sick, fix it → better                     |
+| Event log `limit`          | Default 20, capped at 100, bad values use the default      | One request can't pull a whole history, and a typo in the URL isn't an error       |
