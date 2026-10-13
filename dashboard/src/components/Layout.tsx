@@ -1,4 +1,5 @@
 import { Link, Outlet, useNavigate } from 'react-router';
+import { authApi } from '../api';
 import { useAuth } from '../auth/AuthContext';
 import { Button } from './Button';
 import '../styles/Layout.css';
@@ -8,7 +9,8 @@ export const Layout = () => {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    // Even if the server can't be reached, show the user as logged out here.
+    await authApi.logout().catch(() => undefined);
     setUser(null);
     navigate('/login');
   };

@@ -37,6 +37,14 @@ describe('mock API', () => {
     await expect(mockApi.connectRepo('maia/twice')).rejects.toMatchObject({ status: 409 });
   });
 
+  it('rejects a pet name over 30 characters, like the real server', async () => {
+    const connected = await mockApi.connectRepo('maia/long-name');
+
+    await expect(
+      mockApi.createPet(connected.id, { name: 'k'.repeat(31), character: 'kitsune' }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
   it('rejects a repo name in the wrong format', async () => {
     await expect(mockApi.connectRepo('not a repo')).rejects.toMatchObject({ status: 400 });
   });

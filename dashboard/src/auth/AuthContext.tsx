@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import type { User } from '@kitsune/shared';
+import { authApi } from '../api';
 
-export type User = { id: number; email: string };
 type AuthStatus = 'checking' | 'loggedIn' | 'loggedOut';
 
 type AuthContextValue = {
@@ -18,12 +19,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUserState] = useState<User | null>(null);
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { user: User } | null) => {
-        setUserState(data ? data.user : null);
-        setStatus(data ? 'loggedIn' : 'loggedOut');
+    authApi
+      .me()
+      .then(({ user }) => {
+        setUserState(user);
+        setStatus('loggedIn');
       })
+      // A 401 (nobody is logged in) and an unreachable server both mean "logged out".
       .catch(() => setStatus('loggedOut'));
   }, []);
 

@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router';
-import { useAuth, type User } from '../auth/AuthContext';
+import { ApiError, authApi } from '../api';
+import { useAuth } from '../auth/AuthContext';
 import { AuthShell } from '../components/AuthShell';
 import { Button } from '../components/Button';
 import { Panel } from '../components/Panel';
@@ -24,22 +25,13 @@ export const LoginPage = () => {
     setSubmitting(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      const data: { user?: User; error?: string } = await res.json();
+      const { user } = await authApi.login(email, password);
 
-      if (!res.ok || !data.user) {
-        setError(data.error ?? 'Something went wrong. Try again.');
-        return;
-      }
-
-      setUser(data.user);
+      setUser(user);
       navigate('/');
-    } catch {
-      setError('Could not reach the server. Try again.');
+    } catch (err) {
+      // An ApiError carries the server's own message (wrong password, email already used).
+      setError(err instanceof ApiError ? err.message : 'Could not reach the server. Try again.');
     } finally {
       setSubmitting(false);
     }
