@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import authRouter from './auth/routes.js';
 import { requireAuth } from './auth/middleware.js';
 import { requireRepoOwner } from './auth/ownership.js';
+import eventsRouter from './events/routes.js';
 import petRouter from './pets/routes.js';
 import reposRouter from './repos/routes.js';
 import webhooksRouter from './webhooks/routes.js';
@@ -32,9 +33,10 @@ app.get('/api/health', (req, res) => {
 });
 app.use('/api/auth', authRouter);
 
-// Every pet route needs a logged-in user who owns the repo in the URL, so both checks
-// run here, once, before the pet router sees the request.
+// Every pet and event route needs a logged-in user who owns the repo in the URL, so both
+// checks run here, once, before the router sees the request.
 app.use('/api/repos/:repoId/pet', requireAuth, requireRepoOwner, petRouter);
+app.use('/api/repos/:repoId/events', requireAuth, requireRepoOwner, eventsRouter);
 
 app.use('/api/repos', reposRouter);
 
