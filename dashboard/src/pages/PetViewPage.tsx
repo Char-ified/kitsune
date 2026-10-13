@@ -1,6 +1,14 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
-import type { EventType, Mood, Pet, Repo, RepoEvent } from '@kitsune/shared';
+import {
+  describeGroup,
+  formatWhen,
+  groupEvents,
+  type Mood,
+  type Pet,
+  type Repo,
+  type RepoEvent,
+} from '@kitsune/shared';
 import { api, ApiError } from '../api';
 import { Button } from '../components/Button';
 import { MoodBadge } from '../components/MoodBadge';
@@ -30,18 +38,8 @@ const MOOD_COPY: Record<Mood, { headline: string; subline: string; quote: string
   },
 };
 
-const EVENT_LABELS: Record<EventType, string> = {
-  pr_merged: 'PR merged',
-  tests_passed: 'Tests passed',
-  tests_failed: 'Tests failed',
-};
-
-// The extra line under an event: "#12 add login route" for a PR, the workflow name for tests.
-const describeEvent = (event: RepoEvent) => {
-  const { number, title, name } = event.details;
-  if (event.type === 'pr_merged') return [number && `#${number}`, title].filter(Boolean).join(' ');
-  return name ?? '';
-};
+// Under each row: the pull request's title, or the name of the workflow that ran the tests.
+const eventDetail = (event: RepoEvent) => event.details.title ?? event.details.name ?? '';
 
 const formatTime = (date: Date) =>
   date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -193,15 +191,30 @@ export const PetViewPage = () => {
           ) : (
             <>
               <ul className="event-list">
-                {events.map((event) => (
-                  <li key={event.id} className={`event event-${event.type}`}>
-                    <time className="event-time">{formatTime(new Date(event.createdAt))}</time>
-                    <div>
-                      <p className="event-title">{EVENT_LABELS[event.type]}</p>
-                      <p className="event-detail">{describeEvent(event)}</p>
-                    </div>
-                  </li>
-                ))}
+                {groupEvents(events).map((group) => {
+                  const { latest } = group;
+                  const line = describeGroup(group);
+
+                  return (
+                    <li key={latest.id} className={`event event-${latest.type}`}>
+                      <time className="event-time">
+                        {formatWhen(new Date(latest.createdAt), updatedAt)}
+                      </time>
+                      <div>
+                        <p className="event-title">
+                          {line.url ? (
+                            <a href={line.url} target="_blank" rel="noreferrer">
+                              {line.text}
+                            </a>
+                          ) : (
+                            line.text
+                          )}
+                        </p>
+                        <p className="event-detail">{eventDetail(latest)}</p>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
               <p className="pet-listening">Listening for the next signal...</p>
             </>

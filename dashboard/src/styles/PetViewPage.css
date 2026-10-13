@@ -143,11 +143,22 @@
 }
 
 .event-time {
+  flex-shrink: 0;
+  width: 132px;
   color: var(--color-muted);
   font-size: 12px;
   line-height: 20px;
 }
 
+/* A title that links to GitHub keeps its mood color and only underlines on hover. */
+.event-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.event-title a:hover {
+  text-decoration: underline;
+}
 .event-title {
   font-size: 14px;
   font-weight: 600;

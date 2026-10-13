@@ -318,6 +318,14 @@ a:hover {
   border-color: #e8452c;
 }
 
+.speech.tests_passed .speech-tail {
+  border-color: #4fb89a;
+}
+
+.speech.tests_passed {
+  border-color: #4fb89a;
+}
+
 /* ---------- The small circle the fox hides in ---------- */
 
 .corner {

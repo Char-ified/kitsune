@@ -59,11 +59,11 @@ const logout = async (): Promise<SessionResponse> => {
   return { user: null };
 };
 
-// The latest few events for a repo, for the fox's speech bubble and its mini log.
-// The fox still works without them, so any problem here just means "no events".
+// The latest events for a repo, for the fox's speech bubble and its mini log. Ten is enough
+// to see past a run of routine passing tests to the last thing that was actually news.
 const getLatestEvents = async (repoId: number, token: string): Promise<RepoEvent[]> => {
   try {
-    const res = await fetch(`${SERVER_URL}/api/repos/${repoId}/events?limit=3`, {
+    const res = await fetch(`${SERVER_URL}/api/repos/${repoId}/events?limit=10`, {
       headers: { Authorization: `Bearer ${token}` },
       credentials: 'omit',
     });
