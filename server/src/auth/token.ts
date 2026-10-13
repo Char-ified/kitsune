@@ -19,8 +19,9 @@ export const verifyToken = (token: string): number | null => {
   try {
     const payload = jwt.verify(token, secret) as { userId: number };
     return payload.userId;
-  } catch (err) {
-    console.warn(err);
+  } catch {
+    // An expired or made-up token is an everyday event (a stale cookie), not a problem worth
+    // a stack trace in the logs. The caller answers 401, and the request log records it.
     return null;
   }
 };

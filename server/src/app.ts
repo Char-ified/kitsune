@@ -11,6 +11,7 @@ import { requireRepoOwner } from './auth/ownership.js';
 import eventsRouter from './events/routes.js';
 import petRouter from './pets/routes.js';
 import reposRouter from './repos/routes.js';
+import { requestLogger } from './requestLogger.js';
 import webhooksRouter from './webhooks/routes.js';
 
 const app = express();
@@ -24,11 +25,11 @@ app.use('/api/webhooks', express.raw({ type: '*/*', limit: '1mb' }));
 app.use(express.json());
 app.use(cookieParser());
 
-app.use((req, res, next) => {
-  console.log(`a ${req.method} request was made to ${req.path}`);
-
-  next();
-});
+// Log API requests only. The dashboard's pages and files would bury them, and test runs
+// don't need a line per request.
+if (process.env.NODE_ENV !== 'test') {
+  app.use('/api', requestLogger);
+}
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
