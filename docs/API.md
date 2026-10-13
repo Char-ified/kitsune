@@ -202,7 +202,7 @@ Errors:  401  not logged in
 ### 6. Connect a repo: `POST /api/repos`
 
 - **Auth:** Logged in
-- **Notes:** Same URL as #5. The method tells them apart. **Different users can connect the same GitHub repo** (e.g. the whole team on one project repo). Each connection gets its own row, its own secret, and its own webhook URL. The **same user** connecting the same repo twice is a `409`. The secret is returned here and by #13 (new webhook secret), and never by any `GET` route. The server builds `webhookUrl` from the `PUBLIC_URL` environment variable (the server's public address). `fullName` is trimmed, and each half may contain letters, numbers, `_`, `.`, and `-`.
+- **Notes:** Same URL as #5. The method tells them apart. **Different users can connect the same GitHub repo** (e.g. the whole team on one project repo). Each connection gets its own row, its own secret, and its own webhook URL. The **same user** connecting the same repo twice is a `409`. The secret is returned here and by #13 (new webhook secret), and never by any `GET` route. The server builds `webhookUrl` from the `PUBLIC_URL` environment variable (the server's public address). `fullName` is trimmed, each half may contain letters, numbers, `_`, `.`, and `-`, and the whole name can be at most 140 characters (GitHub's own limit). Names are compared without regard to capital letters, like on GitHub: after connecting `maia/demo`, the same user connecting `Maia/Demo` gets the `409`. The name is stored and returned the way it was typed.
 
 ```
 Input:   { "fullName": "owner/repo-name" }
@@ -210,7 +210,7 @@ Output:  201 Created
          { "id": number, "fullName": "string",
            "webhookUrl": "<PUBLIC_URL>/api/webhooks/github/<id>",
            "webhookSecret": "string", "createdAt": "string" }
-Errors:  400  "Use the format owner/repo-name" (missing, not a string, or not owner/name)
+Errors:  400  "Use the format owner/repo-name" (missing, not a string, not owner/name, or too long)
          401  not logged in
          409  "You already connected this repo"
          500  unexpected server error

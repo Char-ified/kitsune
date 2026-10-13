@@ -17,6 +17,10 @@ CREATE TABLE IF NOT EXISTS repos (
   UNIQUE (user_id, full_name)
 );
 
+-- GitHub treats "maia/demo" and "Maia/Demo" as the same repo, so one user can't connect both.
+-- The name is still stored the way the user typed it; only the comparison ignores case.
+CREATE UNIQUE INDEX IF NOT EXISTS repos_user_lower_name_idx ON repos (user_id, lower(full_name));
+
 CREATE TABLE IF NOT EXISTS pets (
   id SERIAL PRIMARY KEY,
   repo_id INTEGER NOT NULL UNIQUE REFERENCES repos (id) ON DELETE CASCADE,
