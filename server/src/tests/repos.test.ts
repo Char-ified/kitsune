@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import app from '../app.js';
 import pool from '../db.js';
 
@@ -80,6 +80,35 @@ describe('POST /api/repos', () => {
     expect(res.body).toEqual({ error: 'You already connected this repo' });
   });
 
+  it('treats names that differ only by capital letters as the same repo', async () => {
+    const { agent } = await setUp('fox@example.com', 'fox/den');
+
+    const res = await agent.post('/api/repos').send({ fullName: 'Fox/Den' });
+
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'You already connected this repo' });
+  });
+
+  it('keeps the name the way the user typed it', async () => {
+    const agent = await signUp();
+
+    const res = await agent.post('/api/repos').send({ fullName: 'Char-ified/Kitsune' });
+
+    expect(res.body.fullName).toBe('Char-ified/Kitsune');
+  });
+
+  it('accepts the longest name GitHub allows and rejects anything longer', async () => {
+    const agent = await signUp();
+    const longest = `${'o'.repeat(39)}/${'r'.repeat(100)}`;
+
+    const ok = await agent.post('/api/repos').send({ fullName: longest });
+    const tooLong = await agent.post('/api/repos').send({ fullName: `${longest}r` });
+
+    expect(ok.status).toBe(201);
+    expect(tooLong.status).toBe(400);
+    expect(tooLong.body).toEqual({ error: 'Use the format owner/repo-name' });
+  });
+
   it('lets different users connect the same repo, each with their own secret', async () => {
     const first = await setUp('first@example.com', 'team/project');
     const second = await setUp('second@example.com', 'team/project');
@@ -92,6 +121,36 @@ describe('POST /api/repos', () => {
     const res = await request(app).post('/api/repos').send({ fullName: 'fox/den' });
 
     expect(res.status).toBe(401);
+  });
+});
+
+describe('PUBLIC_URL', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
+  });
+
+  it('leaves out a trailing slash when building the webhook URL', async () => {
+    vi.stubEnv('PUBLIC_URL', 'https://kitsune.example.com/');
+    const agent = await signUp();
+
+    const res = await agent.post('/api/repos').send({ fullName: 'fox/den' });
+
+    expect(res.body.webhookUrl).toBe(
+      `https://kitsune.example.com/api/webhooks/github/${res.body.id}`,
+    );
+  });
+
+  it('fails clearly, and saves nothing, when PUBLIC_URL is not set', async () => {
+    vi.stubEnv('PUBLIC_URL', '');
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const agent = await signUp();
+
+    const res = await agent.post('/api/repos').send({ fullName: 'fox/den' });
+
+    expect(res.status).toBe(500);
+    expect(String(logged.mock.calls[0][0])).toContain('PUBLIC_URL is not set');
+    expect((await pool.query('SELECT id FROM repos')).rows).toEqual([]);
   });
 });
 

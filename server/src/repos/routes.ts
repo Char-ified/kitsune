@@ -19,12 +19,24 @@ type RepoRow = {
 };
 
 const FULL_NAME_PATTERN = /^[\w.-]+\/[\w.-]+$/;
+// GitHub allows 39 characters for an owner and 100 for a repo name, plus the slash.
+const MAX_FULL_NAME_LENGTH = 140;
 
 const newWebhookSecret = (): string => crypto.randomBytes(32).toString('hex');
 
+// The server's own public address. Without it the webhook URL would quietly start with
+// "undefined", so fail loudly instead, the same way token.ts does for JWT_SECRET.
+const getPublicUrl = (): string => {
+  const publicUrl: string | undefined = process.env.PUBLIC_URL;
+  if (!publicUrl) {
+    throw new Error('PUBLIC_URL is not set. Add it to server/.env');
+  }
+  // A trailing slash would give "https://example.com//api/webhooks/...".
+  return publicUrl.replace(/\/+$/, '');
+};
+
 // The address the user pastes into GitHub's webhook settings.
-const webhookUrlFor = (repoId: number): string =>
-  `${process.env.PUBLIC_URL}/api/webhooks/github/${repoId}`;
+const webhookUrlFor = (repoId: number): string => `${getPublicUrl()}/api/webhooks/github/${repoId}`;
 
 // 5. List my repos
 reposRouter.get('/', requireAuth, async (req, res) => {
@@ -65,10 +77,13 @@ reposRouter.post('/', requireAuth, async (req, res) => {
   const rawFullName: unknown = req.body?.fullName;
   const fullName = typeof rawFullName === 'string' ? rawFullName.trim() : '';
 
-  if (!FULL_NAME_PATTERN.test(fullName)) {
+  if (fullName.length > MAX_FULL_NAME_LENGTH || !FULL_NAME_PATTERN.test(fullName)) {
     res.status(400).json({ error: 'Use the format owner/repo-name' });
     return;
   }
+
+  // Checked before saving, so a server with no PUBLIC_URL doesn't leave a repo row behind.
+  getPublicUrl();
 
   const webhookSecret = newWebhookSecret();
 
@@ -89,7 +104,8 @@ reposRouter.post('/', requireAuth, async (req, res) => {
     };
     res.status(201).json(connected);
   } catch (err) {
-    // 23505 is Postgres's code for "unique violation": this user already connected this repo
+    // 23505 is Postgres's code for "unique violation": this user already connected this repo.
+    // Names are compared in lowercase (see schema.sql), like GitHub does.
     if (err instanceof Error && 'code' in err && err.code === '23505') {
       res.status(409).json({ error: 'You already connected this repo' });
       return;
