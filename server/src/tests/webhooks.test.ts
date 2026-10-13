@@ -308,6 +308,22 @@ describe('saving events', () => {
     expect(await savedEvents(repo.repoId)).toEqual([]);
   });
 
+  it('accepts a delivery bigger than 100 KB', async () => {
+    const repo = await setUp();
+    // A pull request with a very long description, well over Express's default body limit.
+    const body = JSON.stringify({
+      action: 'closed',
+      pull_request: { merged: true, number: 7, title: 'big one', body: 'x'.repeat(150_000) },
+    });
+
+    const res = await deliver(repo.webhookUrl, body, githubSignature(body, repo.secret), {
+      event: 'pull_request',
+    });
+
+    expect(res.status).toBe(200);
+    expect(await savedEvents(repo.repoId)).toHaveLength(1);
+  });
+
   it('removes the events when the repo is disconnected', async () => {
     const repo = await setUp();
     await deliverEvent(repo, 'pull_request', mergedPullRequest);
