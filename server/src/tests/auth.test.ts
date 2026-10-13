@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import app from '../app.js';
@@ -90,6 +91,22 @@ describe('POST /api/auth/login', () => {
     // Identical responses, so nobody can tell which emails have accounts.
     expect(wrongPassword.body).toEqual(unknownEmail.body);
   });
+
+  it.each([
+    ['a missing email', { email: undefined }],
+    ['a missing password', { password: undefined }],
+    ['an empty password', { password: '' }],
+    ['a password that is not a string', { password: 12345678 }],
+  ])('rejects %s', async (_label, overrides) => {
+    await signUp();
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .send({ ...credentials, ...overrides });
+
+    expect(res.status).toBe(400);
+    expect(res.body).toEqual({ error: 'Email and password are required' });
+  });
 });
 
 describe('GET /api/auth/me', () => {
@@ -124,6 +141,37 @@ describe('GET /api/auth/me', () => {
       .set('Authorization', 'Bearer not-a-real-token');
 
     expect(res.status).toBe(401);
+  });
+
+  it('rejects a token that has expired', async () => {
+    const { body } = await signUp();
+    // Signed with the real (test) secret, but already past its expiry time.
+    const expired = jwt.sign({ userId: body.user.id }, 'test-only-secret', { expiresIn: -60 });
+
+    const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${expired}`);
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'Invalid or expired token' });
+  });
+
+  it('rejects a token signed with a different secret (a forgery)', async () => {
+    const { body } = await signUp();
+    const forged = jwt.sign({ userId: body.user.id }, 'not-our-secret', { expiresIn: '7d' });
+
+    const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${forged}`);
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'Invalid or expired token' });
+  });
+
+  it('rejects a valid token whose account no longer exists', async () => {
+    const { body } = await signUp();
+    await pool.query('DELETE FROM users WHERE id = $1', [body.user.id]);
+
+    const res = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${body.token}`);
+
+    expect(res.status).toBe(401);
+    expect(res.body).toEqual({ error: 'Not logged in' });
   });
 });
 
