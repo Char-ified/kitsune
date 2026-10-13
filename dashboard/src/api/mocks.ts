@@ -126,7 +126,7 @@ export const mockApi: Api = {
   createPet: async (repoId, input) => {
     await pause();
     findRepo(repoId);
-    if (!input.name.trim()) throw new ApiError(400, 'Give your pet a name');
+    if (!input.name.trim()) throw new ApiError(400, 'Give your pet a name (up to 30 characters)');
     if (pets.has(repoId)) throw new ApiError(409, 'This repo already has a pet');
     const pet: Pet = {
       id: nextId++,
@@ -146,7 +146,7 @@ export const mockApi: Api = {
     const pet = pets.get(repoId);
     if (!pet) throw new ApiError(404, 'No pet yet');
     if (input.name !== undefined && !input.name.trim()) {
-      throw new ApiError(400, 'Give your pet a name');
+      throw new ApiError(400, 'Give your pet a name (up to 30 characters)');
     }
     const updated: Pet = {
       ...pet,
