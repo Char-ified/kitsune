@@ -264,6 +264,19 @@ describe('saving events', () => {
     expect(await savedEvents(repo.repoId)).toHaveLength(1);
   });
 
+  it('saves the same delivery for every user who connected that repo', async () => {
+    // Two people connect the same GitHub repo. GitHub sends each of their webhooks
+    // the same event with the same delivery ID.
+    const maia = await setUp('maia@example.com');
+    const olivia = await setUp('olivia@example.com');
+
+    await deliverEvent(maia, 'pull_request', mergedPullRequest, 'shared-delivery');
+    await deliverEvent(olivia, 'pull_request', mergedPullRequest, 'shared-delivery');
+
+    expect(await savedEvents(maia.repoId)).toHaveLength(1);
+    expect(await savedEvents(olivia.repoId)).toHaveLength(1);
+  });
+
   it('saves separate deliveries as separate events', async () => {
     const repo = await setUp();
 

@@ -62,12 +62,14 @@ webhooksRouter.post('/github/:repoId', async (req, res) => {
     return;
   }
 
-  // GitHub can send the same delivery twice. github_delivery_id is UNIQUE, so
-  // ON CONFLICT DO NOTHING skips a repeat instead of failing, and we still answer 200.
+  // GitHub can send the same delivery twice. A delivery ID is unique per repo
+  // (see schema.sql), so ON CONFLICT DO NOTHING skips a repeat instead of failing,
+  // and we still answer 200. Per repo, not per table: when two people connect the same
+  // GitHub repo, both of their webhooks get the same delivery ID, and both must be saved.
   await pool.query(
     `INSERT INTO events (repo_id, type, github_delivery_id, details)
      VALUES ($1, $2, $3, $4)
-     ON CONFLICT (github_delivery_id) DO NOTHING`,
+     ON CONFLICT DO NOTHING`,
     [repo.id, event.type, deliveryId, JSON.stringify(event.details)],
   );
 
