@@ -23,11 +23,12 @@ export const WIDGET_CSS = `
 
 /* ---------- The fox ---------- */
 
-/* The walker is what moves along the page. By default it rests near the right edge. */
+/* The walker is what moves along the page. By default it rests near the right edge,
+   far enough in that a speech bubble centered above it still fits on screen. */
 .walker {
   position: absolute;
   bottom: 6px;
-  left: calc(100% - 128px);
+  left: calc(100% - 176px);
   width: 64px;
   pointer-events: auto;
 }
@@ -41,10 +42,10 @@ export const WIDGET_CSS = `
 @keyframes roam {
   0%,
   100% {
-    left: calc(100% - 128px);
+    left: calc(100% - 176px);
   }
   50% {
-    left: 64px;
+    left: 112px;
   }
 }
 
@@ -127,14 +128,18 @@ export const WIDGET_CSS = `
   }
 }
 
-/* ---------- The card that opens above the fox ---------- */
+/* ---------- What floats above the fox: its card, or what it's saying ---------- */
 
-.card {
+/* Centered above the fox, and moves with it. */
+.overlay {
   position: absolute;
   bottom: 72px;
   left: 50%;
+  transform: translateX(-50%);
+}
+
+.card {
   width: 176px;
-  margin-left: -88px;
   box-sizing: border-box;
   padding: 10px;
   background: #1a1f33;
@@ -226,30 +231,134 @@ a:hover {
   color: #e8e6e3;
 }
 
-/* ---------- The small square the fox hides in ---------- */
+/* The last few events inside the card. */
+.log {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 8px 0 0;
+  border-top: 2px solid #2c3350;
+}
 
-.bubble {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
+.log-item {
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.log-item a,
+.log-item span {
+  color: #e8e6e3;
+}
+
+.log-item.tests_failed a,
+.log-item.tests_failed span {
+  color: #e8452c;
+}
+
+/* ---------- The speech bubble ---------- */
+
+/* A pixel-style bubble with square corners. */
+.speech {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  padding: 0;
+  gap: 12px;
+  padding: 10px 12px;
   background: #1a1f33;
   border: 2px solid #2c3350;
-  border-radius: 4px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  cursor: pointer;
+  box-shadow:
+    -4px 0 0 -2px #1a1f33,
+    4px 0 0 -2px #1a1f33,
+    0 8px 24px rgba(0, 0, 0, 0.45);
+  font-size: 13px;
+  white-space: nowrap;
   pointer-events: auto;
 }
 
+.speech.tests_failed {
+  border-color: #e8452c;
+}
+
+.speech-link {
+  color: #4fb89a;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.speech-close {
+  padding: 0 2px;
+  background: none;
+  border: none;
+  color: #9aa0b5;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.speech-close:hover {
+  color: #e8e6e3;
+}
+
+/* The little tail pointing down at the fox. */
+.speech-tail {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 12px;
+  height: 6px;
+  margin-left: -6px;
+  background: #1a1f33;
+  border: 2px solid #2c3350;
+  border-top: none;
+}
+
+.speech.tests_failed .speech-tail {
+  border-color: #e8452c;
+}
+
+/* ---------- The small circle the fox hides in ---------- */
+
+.corner {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  pointer-events: auto;
+}
+
+/* Tucked in the corner there is no room to center a bubble, so it lines up
+   with the right edge and its tail moves over the fox. */
+.corner .overlay {
+  bottom: 66px;
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.corner .speech-tail {
+  left: auto;
+  right: 20px;
+  margin-left: 0;
+}
+
+.bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  background: #1a1f33;
+  border: 2px solid #2c3350;
+  border-radius: 50%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
 .bubble img {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
   image-rendering: pixelated;
-}
-`;
+}`;

@@ -2,7 +2,7 @@
 // The popup sends it a message, it does the work, and it sends back the result.
 // Chrome starts and stops this script whenever it likes, so nothing is kept in variables:
 // the token lives in chrome.storage.
-import type { Repo, User } from '@kitsune/shared';
+import type { Repo, RepoEvent, User } from '@kitsune/shared';
 import { SERVER_URL } from './config';
 import type { ExtensionRequest, PetResponse, SessionResponse } from './messages';
 import { findRepo } from './repo';
@@ -59,6 +59,23 @@ const logout = async (): Promise<SessionResponse> => {
   return { user: null };
 };
 
+// The latest few events for a repo, for the fox's speech bubble and its mini log.
+// The fox still works without them, so any problem here just means "no events".
+const getLatestEvents = async (repoId: number, token: string): Promise<RepoEvent[]> => {
+  try {
+    const res = await fetch(`${SERVER_URL}/api/repos/${repoId}/events?limit=3`, {
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'omit',
+    });
+    if (!res.ok) return [];
+
+    const events: unknown = await res.json();
+    return Array.isArray(events) ? events : [];
+  } catch {
+    return [];
+  }
+};
+
 // Looks up the pet for one GitHub repo, for the widget on that repo's pages.
 // GET /api/repos already includes each repo's pet and mood, so one request is enough.
 const getPet = async (fullName: string): Promise<PetResponse> => {
@@ -81,7 +98,14 @@ const getPet = async (fullName: string): Promise<PetResponse> => {
 
   if (!repo) return { state: 'notConnected' };
   if (!repo.pet) return { state: 'noPet', repoId: repo.id };
-  return { state: 'pet', repoId: repo.id, name: repo.pet.name, mood: repo.pet.mood };
+
+  return {
+    state: 'pet',
+    repoId: repo.id,
+    name: repo.pet.name,
+    mood: repo.pet.mood,
+    events: await getLatestEvents(repo.id, token),
+  };
 };
 
 const handle = (request: ExtensionRequest): Promise<SessionResponse | PetResponse> => {
