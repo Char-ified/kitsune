@@ -54,11 +54,3 @@ describe('an unexpected error inside a route', () => {
     expect(logged).toHaveBeenCalled();
   });
 });
-
-// REHEARSAL ONLY (CHA-26). This fails on purpose so CI goes red and the pet turns sick.
-// Never merge this. The next commit on this branch removes it again.
-describe('demo: a broken test', () => {
-  it('fails on purpose', () => {
-    expect('the tests').toBe('passing');
-  });
-});
